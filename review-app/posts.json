@@ -8,7 +8,8 @@
     "imageNote": "Photo of a young student mid-shred with a big grin, or a staged \"parent covering ears\" shot",
     "status": "published",
     "imageUrl": "/images/post-1.png",
-    "fbPostId": "1376116561194451"
+    "fbPostId": "1376116561194451",
+    "publishedAt": "2026-02-05T06:00:00.000Z"
   },
   {
     "id": 2,
@@ -19,7 +20,8 @@
     "imageNote": "Carousel: Slide 1 - \"Your practice routine needs work.\" Slide 2 - 2 min scales/warmup, Slide 3 - 3 min trouble spots, Slide 4 - 3 min new material, Slide 5 - 2 min play something fun. Slide 6 - \"That's it. 10 minutes. No excuses.\"",
     "status": "published",
     "imageUrl": "/images/post-2.png",
-    "fbPostId": "1376116634527777"
+    "fbPostId": "1376116634527777",
+    "publishedAt": "2026-02-05T06:00:00.000Z"
   },
   {
     "id": 3,
@@ -40,7 +42,8 @@
     "imageNote": "Reel: Quick cuts of different lesson rooms, each with a few seconds of audio. End with a teacher bobbing their head approvingly.",
     "status": "published",
     "imageUrl": "/images/post-4.png",
-    "fbPostId": "1376116704527770"
+    "fbPostId": "1376116704527770",
+    "publishedAt": "2026-02-05T06:00:00.000Z"
   },
   {
     "id": 5,
@@ -61,7 +64,8 @@
     "imageNote": null,
     "status": "published",
     "imageUrl": "/images/post-6.png",
-    "fbPostId": "1376116774527763"
+    "fbPostId": "1376116774527763",
+    "publishedAt": "2026-02-05T06:00:00.000Z"
   },
   {
     "id": 7,
@@ -70,7 +74,7 @@
     "format": "Photo caption",
     "copy": "Meet [Teacher Name], our drum instructor. He's toured with [band/artist], played on actual albums you've heard, and now he's teaching your 8-year-old paradiddles. The range is unmatched.",
     "imageNote": "Photo of drum teacher at the kit, or split image: performing live vs. teaching a young student",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -80,8 +84,9 @@
     "format": "Reel concept",
     "copy": "When your student asks \"can I try something?\" and then plays something that wasn't even in the lesson plan. The best moments aren't scripted.",
     "imageNote": "Reel: Teacher reacting with genuine surprise/pride. Student plays something unexpected. Teacher's face says it all.",
-    "status": "pending",
-    "imageUrl": "/images/post-8.png"
+    "status": "published",
+    "imageUrl": "/images/post-8.png",
+    "fbPostId": "1376127127860061"
   },
   {
     "id": 9,
@@ -90,8 +95,9 @@
     "format": "Text",
     "copy": "If your kid says \"I already practiced\" and you didn't hear anything... they did not practice. Source: every music teacher ever.",
     "imageNote": null,
-    "status": "pending",
-    "imageUrl": "/images/post-9.png"
+    "status": "published",
+    "imageUrl": "/images/post-9.png",
+    "fbPostId": "1376127251193382"
   },
   {
     "id": 10,
@@ -130,8 +136,9 @@
     "format": "Carousel idea",
     "copy": "Mistakes parents make about practice (with love):\n1. Asking \"did you practice?\" instead of practicing WITH them\n2. Expecting perfection instead of progress\n3. Comparing to the kid who's been playing 3 years longer\n4. Turning it into a punishment\n\nYou're doing great. Just keep showing up.",
     "imageNote": "Carousel: Each slide is one mistake with a fun illustration or meme-style graphic. Final slide is encouraging.",
-    "status": "pending",
-    "imageUrl": "/images/post-13.png"
+    "status": "published",
+    "imageUrl": "/images/post-13.png",
+    "fbPostId": "1376127324526708"
   },
   {
     "id": 14,
@@ -140,7 +147,7 @@
     "format": "Photo caption",
     "copy": "Our voice teacher's Spotify has more streams than most people's entire playlists. She also gets genuinely hyped when a 6-year-old hits their first high note. That combo is hard to find.",
     "imageNote": "Photo of voice teacher with students, or a screenshot of their Spotify artist page next to a teaching photo",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -150,7 +157,7 @@
     "format": "Photo caption",
     "copy": "Brother and sister duo. He plays drums, she plays piano. They just played their first song together at the recital and the sibling rivalry has officially become a sibling band.",
     "imageNote": "Photo of siblings performing together",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -160,7 +167,7 @@
     "format": "Reel concept",
     "copy": "What our front desk sees every day: kids running in excited, kids walking out playing air guitar, at least one parent secretly hoping their kid becomes famous, and a truly unhinged amount of high fives.",
     "imageNote": "Reel: Montage from a camera near the front desk. Kids arriving, leaving, celebrating. Staff giving high fives.",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -170,8 +177,9 @@
     "format": "Text",
     "copy": "Slow is smooth and smooth is fast. If you can't play it slow, you definitely can't play it fast. Drop the tempo, nail the notes, then speed up. Every pro does this. Every single one.",
     "imageNote": null,
-    "status": "pending",
-    "imageUrl": null
+    "status": "published",
+    "imageUrl": "/images/post-17.png",
+    "fbPostId": "1376127387860035"
   },
   {
     "id": 18,
@@ -180,7 +188,7 @@
     "format": "Photo caption",
     "copy": "Asked our guitar teacher what he listens to on his day off. Got a playlist that goes from Hendrix to Hozier to anime soundtracks. This is the kind of range your kid gets access to.",
     "imageNote": "Screenshot of an eclectic playlist or photo of guitar teacher with headphones",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -190,7 +198,7 @@
     "format": "Photo caption",
     "copy": "Adult student alert. He started piano at 42 because \"it was on my bucket list.\" Three months in, he's playing songs for his wife at home. Never too late, never too old, never too busy.",
     "imageNote": "Photo of adult student at the piano, or candid shot during lesson",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -200,8 +208,9 @@
     "format": "Text",
     "copy": "The metronome is not your enemy. It's the friend who tells you the truth when no one else will. Use it. Hate it. Become best friends with it. In that order.",
     "imageNote": null,
-    "status": "pending",
-    "imageUrl": null
+    "status": "published",
+    "imageUrl": "/images/post-20.png",
+    "fbPostId": "1376127457860028"
   },
   {
     "id": 21,

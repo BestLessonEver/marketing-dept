@@ -244,6 +244,7 @@ app.post("/api/posts/:id/publish", (req, res) => {
               const idx = posts.findIndex((p) => p.id === id);
               posts[idx].status = "published";
               posts[idx].fbPostId = result.id;
+              posts[idx].publishedAt = new Date().toISOString();
               writePosts(posts);
               res.json({ success: true, fbPostId: result.id });
             } else {
@@ -284,6 +285,7 @@ app.post("/api/posts/:id/publish", (req, res) => {
           const idx = posts.findIndex((p) => p.id === id);
           posts[idx].status = "published";
           posts[idx].fbPostId = result.id;
+          posts[idx].publishedAt = new Date().toISOString();
           writePosts(posts);
           res.json({ success: true, fbPostId: result.id });
         } else {
