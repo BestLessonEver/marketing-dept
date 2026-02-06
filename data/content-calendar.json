@@ -1,0 +1,510 @@
+{
+  "calendarMeta": {
+    "startDate": "2026-02-10",
+    "endDate": "2026-05-04",
+    "totalWeeks": 12,
+    "blogPostsPerWeek": 2,
+    "totalBlogPosts": 24,
+    "totalLandingPages": 35,
+    "strategy": "Prioritize highest-volume instrument+city combos first (piano/guitar in Friendswood/League City), then expand to other instruments and cities. Blog posts target informational and long-tail keywords to build topical authority. Landing pages are built progressively across the 12 weeks."
+  },
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "startDate": "2026-02-10",
+      "theme": "Launch - Friendswood Piano & Guitar",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Piano Lessons in Friendswood, TX",
+          "targetKeyword": "piano lessons friendswood tx",
+          "publishDate": "2026-02-10",
+          "priority": 1
+        },
+        {
+          "type": "landing-page",
+          "title": "Guitar Lessons in Friendswood, TX",
+          "targetKeyword": "guitar lessons friendswood tx",
+          "publishDate": "2026-02-10",
+          "priority": 2
+        },
+        {
+          "type": "blog",
+          "title": "How to Choose the Right Guitar for Your Child",
+          "targetKeyword": "first guitar for kids",
+          "publishDate": "2026-02-10",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "What Age Should Kids Start Piano Lessons? A No-BS Guide",
+          "targetKeyword": "best age to start piano lessons",
+          "publishDate": "2026-02-13",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 2,
+      "startDate": "2026-02-17",
+      "theme": "League City Piano & Guitar",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Piano Lessons in League City, TX",
+          "targetKeyword": "piano lessons league city tx",
+          "publishDate": "2026-02-17",
+          "priority": 3
+        },
+        {
+          "type": "landing-page",
+          "title": "Guitar Lessons in League City, TX",
+          "targetKeyword": "guitar lessons league city tx",
+          "publishDate": "2026-02-17",
+          "priority": 4
+        },
+        {
+          "type": "blog",
+          "title": "5 Signs Your Kid Is Ready for Music Lessons (And 3 Signs They're Not)",
+          "targetKeyword": "benefits of music lessons for kids",
+          "publishDate": "2026-02-17",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "Piano vs Guitar: Which Instrument Should Your Kid Learn First?",
+          "targetKeyword": "kids piano lessons near me",
+          "publishDate": "2026-02-20",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 3,
+      "startDate": "2026-02-24",
+      "theme": "Friendswood Voice & Drums",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Voice Lessons in Friendswood, TX",
+          "targetKeyword": "voice lessons friendswood tx",
+          "publishDate": "2026-02-24",
+          "priority": 5
+        },
+        {
+          "type": "landing-page",
+          "title": "Drum Lessons in Friendswood, TX",
+          "targetKeyword": "drum lessons friendswood tx",
+          "publishDate": "2026-02-24",
+          "priority": 6
+        },
+        {
+          "type": "blog",
+          "title": "Your Neighbors Will Survive: A Parent's Guide to Drum Lessons at Home",
+          "targetKeyword": "kids drum lessons near me",
+          "publishDate": "2026-02-24",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "Why Voice Lessons Aren't Just for Future Pop Stars",
+          "targetKeyword": "kids voice lessons near me",
+          "publishDate": "2026-02-27",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 4,
+      "startDate": "2026-03-03",
+      "theme": "Pearland Piano & Guitar",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Piano Lessons in Pearland, TX",
+          "targetKeyword": "piano lessons pearland tx",
+          "publishDate": "2026-03-03",
+          "priority": 7
+        },
+        {
+          "type": "landing-page",
+          "title": "Guitar Lessons in Pearland, TX",
+          "targetKeyword": "guitar lessons pearland tx",
+          "publishDate": "2026-03-03",
+          "priority": 8
+        },
+        {
+          "type": "blog",
+          "title": "How Much Do Music Lessons Actually Cost in the Houston Area?",
+          "targetKeyword": "how much do guitar lessons cost",
+          "publishDate": "2026-03-03",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "The Real Reason Your Kid Quit Piano (And How to Prevent It)",
+          "targetKeyword": "how to choose a piano teacher",
+          "publishDate": "2026-03-06",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 5,
+      "startDate": "2026-03-10",
+      "theme": "League City Voice & Drums + Friendswood Violin",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Voice Lessons in League City, TX",
+          "targetKeyword": "voice lessons league city tx",
+          "publishDate": "2026-03-10",
+          "priority": 9
+        },
+        {
+          "type": "landing-page",
+          "title": "Drum Lessons in League City, TX",
+          "targetKeyword": "drum lessons league city tx",
+          "publishDate": "2026-03-10",
+          "priority": 10
+        },
+        {
+          "type": "landing-page",
+          "title": "Violin Lessons in Friendswood, TX",
+          "targetKeyword": "violin lessons friendswood tx",
+          "publishDate": "2026-03-10",
+          "priority": 11
+        },
+        {
+          "type": "blog",
+          "title": "Guitar Lessons for Teens: Why 13 Is Actually the Perfect Age to Start",
+          "targetKeyword": "guitar lessons for teens friendswood",
+          "publishDate": "2026-03-10",
+          "contentPillar": "student-highlights"
+        },
+        {
+          "type": "blog",
+          "title": "What Makes a Great Music Teacher? (Hint: It's Not a Music Degree)",
+          "targetKeyword": "music teacher friendswood tx",
+          "publishDate": "2026-03-13",
+          "contentPillar": "teacher-spotlights"
+        }
+      ]
+    },
+    {
+      "weekNumber": 6,
+      "startDate": "2026-03-17",
+      "theme": "Clear Lake Piano & Guitar",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Piano Lessons in Clear Lake, TX",
+          "targetKeyword": "piano lessons clear lake tx",
+          "publishDate": "2026-03-17",
+          "priority": 12
+        },
+        {
+          "type": "landing-page",
+          "title": "Guitar Lessons in Clear Lake, TX",
+          "targetKeyword": "guitar lessons clear lake tx",
+          "publishDate": "2026-03-17",
+          "priority": 13
+        },
+        {
+          "type": "blog",
+          "title": "Adult Guitar Lessons: Yes, You Can Still Learn (No, It's Not Too Late)",
+          "targetKeyword": "adult guitar lessons friendswood",
+          "publishDate": "2026-03-17",
+          "contentPillar": "student-highlights"
+        },
+        {
+          "type": "blog",
+          "title": "Why Performance Matters More Than Practice (And We Have the Stages to Prove It)",
+          "targetKeyword": "piano recitals friendswood tx",
+          "publishDate": "2026-03-20",
+          "contentPillar": "studio-culture"
+        }
+      ]
+    },
+    {
+      "weekNumber": 7,
+      "startDate": "2026-03-24",
+      "theme": "Sugar Land Piano & Guitar",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Piano Lessons in Sugar Land, TX",
+          "targetKeyword": "piano lessons sugar land tx",
+          "publishDate": "2026-03-24",
+          "priority": 14
+        },
+        {
+          "type": "landing-page",
+          "title": "Guitar Lessons in Sugar Land, TX",
+          "targetKeyword": "guitar lessons sugar land tx",
+          "publishDate": "2026-03-24",
+          "priority": 15
+        },
+        {
+          "type": "blog",
+          "title": "The Beginner's Guide to Piano Lessons: What to Expect in Your First Month",
+          "targetKeyword": "beginner piano lessons friendswood",
+          "publishDate": "2026-03-24",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "In-Person vs Online Music Lessons: Which One Actually Works?",
+          "targetKeyword": "online vs in person music lessons",
+          "publishDate": "2026-03-27",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 8,
+      "startDate": "2026-03-31",
+      "theme": "Friendswood Bass & Ukulele + Pearland Voice & Drums",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Bass Lessons in Friendswood, TX",
+          "targetKeyword": "bass lessons friendswood tx",
+          "publishDate": "2026-03-31",
+          "priority": 16
+        },
+        {
+          "type": "landing-page",
+          "title": "Ukulele Lessons in Friendswood, TX",
+          "targetKeyword": "ukulele lessons friendswood tx",
+          "publishDate": "2026-03-31",
+          "priority": 17
+        },
+        {
+          "type": "landing-page",
+          "title": "Voice Lessons in Pearland, TX",
+          "targetKeyword": "voice lessons pearland tx",
+          "publishDate": "2026-03-31",
+          "priority": 18
+        },
+        {
+          "type": "landing-page",
+          "title": "Drum Lessons in Pearland, TX",
+          "targetKeyword": "drum lessons pearland tx",
+          "publishDate": "2026-03-31",
+          "priority": 19
+        },
+        {
+          "type": "blog",
+          "title": "Why Bass Is the Most Underrated Instrument for Kids",
+          "targetKeyword": "bass guitar lessons near me",
+          "publishDate": "2026-03-31",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "Ukulele: The Gateway Instrument Your Kid Didn't Know They Needed",
+          "targetKeyword": "kids ukulele lessons near me",
+          "publishDate": "2026-04-03",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 9,
+      "startDate": "2026-04-07",
+      "theme": "League City Violin, Bass, Ukulele + Clear Lake Voice & Drums",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Violin Lessons in League City, TX",
+          "targetKeyword": "violin lessons league city tx",
+          "publishDate": "2026-04-07",
+          "priority": 20
+        },
+        {
+          "type": "landing-page",
+          "title": "Voice Lessons in Clear Lake, TX",
+          "targetKeyword": "voice lessons clear lake tx",
+          "publishDate": "2026-04-07",
+          "priority": 21
+        },
+        {
+          "type": "landing-page",
+          "title": "Drum Lessons in Clear Lake, TX",
+          "targetKeyword": "drum lessons clear lake tx",
+          "publishDate": "2026-04-07",
+          "priority": 22
+        },
+        {
+          "type": "landing-page",
+          "title": "Violin Lessons in Pearland, TX",
+          "targetKeyword": "violin lessons pearland tx",
+          "publishDate": "2026-04-07",
+          "priority": 23
+        },
+        {
+          "type": "blog",
+          "title": "How to Get Your Kid to Practice Without Starting World War III",
+          "targetKeyword": "music lessons for kids friendswood",
+          "publishDate": "2026-04-07",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "Violin for Beginners: Everything You Need to Know Before the First Lesson",
+          "targetKeyword": "kids violin lessons near me",
+          "publishDate": "2026-04-10",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 10,
+      "startDate": "2026-04-14",
+      "theme": "League City Bass & Ukulele + Sugar Land Voice & Drums",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Bass Lessons in League City, TX",
+          "targetKeyword": "bass lessons league city tx",
+          "publishDate": "2026-04-14",
+          "priority": 24
+        },
+        {
+          "type": "landing-page",
+          "title": "Ukulele Lessons in League City, TX",
+          "targetKeyword": "ukulele lessons league city tx",
+          "publishDate": "2026-04-14",
+          "priority": 25
+        },
+        {
+          "type": "landing-page",
+          "title": "Voice Lessons in Sugar Land, TX",
+          "targetKeyword": "voice lessons sugar land tx",
+          "publishDate": "2026-04-14",
+          "priority": 26
+        },
+        {
+          "type": "landing-page",
+          "title": "Drum Lessons in Sugar Land, TX",
+          "targetKeyword": "drum lessons sugar land tx",
+          "publishDate": "2026-04-14",
+          "priority": 27
+        },
+        {
+          "type": "blog",
+          "title": "Summer Music Camps in Friendswood: What Parents Should Know for 2026",
+          "targetKeyword": "summer music camps friendswood",
+          "publishDate": "2026-04-14",
+          "contentPillar": "studio-culture"
+        },
+        {
+          "type": "blog",
+          "title": "Private vs Group Music Lessons: Which Is Right for Your Family?",
+          "targetKeyword": "private music lessons friendswood",
+          "publishDate": "2026-04-17",
+          "contentPillar": "practice-tips"
+        }
+      ]
+    },
+    {
+      "weekNumber": 11,
+      "startDate": "2026-04-21",
+      "theme": "Remaining Landing Pages (Clear Lake + Pearland + Sugar Land)",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Violin Lessons in Clear Lake, TX",
+          "targetKeyword": "violin lessons clear lake tx",
+          "publishDate": "2026-04-21",
+          "priority": 28
+        },
+        {
+          "type": "landing-page",
+          "title": "Bass Lessons in Pearland, TX",
+          "targetKeyword": "bass lessons pearland tx",
+          "publishDate": "2026-04-21",
+          "priority": 29
+        },
+        {
+          "type": "landing-page",
+          "title": "Ukulele Lessons in Pearland, TX",
+          "targetKeyword": "ukulele lessons pearland tx",
+          "publishDate": "2026-04-21",
+          "priority": 30
+        },
+        {
+          "type": "landing-page",
+          "title": "Violin Lessons in Sugar Land, TX",
+          "targetKeyword": "violin lessons sugar land tx",
+          "publishDate": "2026-04-21",
+          "priority": 31
+        },
+        {
+          "type": "blog",
+          "title": "After-School Music Lessons: Making It Work With Your Family's Schedule",
+          "targetKeyword": "after school music lessons friendswood",
+          "publishDate": "2026-04-21",
+          "contentPillar": "practice-tips"
+        },
+        {
+          "type": "blog",
+          "title": "Adult Piano Lessons: It's Never Too Late (Seriously, We Mean It)",
+          "targetKeyword": "adult piano lessons friendswood",
+          "publishDate": "2026-04-24",
+          "contentPillar": "student-highlights"
+        }
+      ]
+    },
+    {
+      "weekNumber": 12,
+      "startDate": "2026-04-28",
+      "theme": "Final Landing Pages + Wrap-Up Content",
+      "items": [
+        {
+          "type": "landing-page",
+          "title": "Bass Lessons in Clear Lake, TX",
+          "targetKeyword": "bass lessons clear lake tx",
+          "publishDate": "2026-04-28",
+          "priority": 32
+        },
+        {
+          "type": "landing-page",
+          "title": "Ukulele Lessons in Clear Lake, TX",
+          "targetKeyword": "ukulele lessons clear lake tx",
+          "publishDate": "2026-04-28",
+          "priority": 33
+        },
+        {
+          "type": "landing-page",
+          "title": "Bass Lessons in Sugar Land, TX",
+          "targetKeyword": "bass lessons sugar land tx",
+          "publishDate": "2026-04-28",
+          "priority": 34
+        },
+        {
+          "type": "landing-page",
+          "title": "Ukulele Lessons in Sugar Land, TX",
+          "targetKeyword": "ukulele lessons sugar land tx",
+          "publishDate": "2026-04-28",
+          "priority": 35
+        },
+        {
+          "type": "blog",
+          "title": "The Best Music Lessons in Friendswood: What to Look For (From People Who Actually Teach)",
+          "targetKeyword": "best music lessons friendswood",
+          "publishDate": "2026-04-28",
+          "contentPillar": "teacher-spotlights"
+        },
+        {
+          "type": "blog",
+          "title": "Music Lessons for Adults: A Guide to Getting Started in the Houston Area",
+          "targetKeyword": "music lessons for adults near me",
+          "publishDate": "2026-05-01",
+          "contentPillar": "student-highlights"
+        }
+      ]
+    }
+  ]
+}

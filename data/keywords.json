@@ -1,0 +1,566 @@
+{
+  "primaryKeywords": [
+    {
+      "keyword": "piano lessons friendswood tx",
+      "instrument": "piano",
+      "city": "Friendswood",
+      "searchVolume": "high",
+      "competition": "medium",
+      "priority": 1
+    },
+    {
+      "keyword": "guitar lessons friendswood tx",
+      "instrument": "guitar",
+      "city": "Friendswood",
+      "searchVolume": "high",
+      "competition": "medium",
+      "priority": 2
+    },
+    {
+      "keyword": "piano lessons league city tx",
+      "instrument": "piano",
+      "city": "League City",
+      "searchVolume": "high",
+      "competition": "medium",
+      "priority": 3
+    },
+    {
+      "keyword": "guitar lessons league city tx",
+      "instrument": "guitar",
+      "city": "League City",
+      "searchVolume": "high",
+      "competition": "medium",
+      "priority": 4
+    },
+    {
+      "keyword": "voice lessons friendswood tx",
+      "instrument": "voice",
+      "city": "Friendswood",
+      "searchVolume": "medium",
+      "competition": "low",
+      "priority": 5
+    },
+    {
+      "keyword": "drum lessons friendswood tx",
+      "instrument": "drums",
+      "city": "Friendswood",
+      "searchVolume": "medium",
+      "competition": "low",
+      "priority": 6
+    },
+    {
+      "keyword": "piano lessons pearland tx",
+      "instrument": "piano",
+      "city": "Pearland",
+      "searchVolume": "high",
+      "competition": "high",
+      "priority": 7
+    },
+    {
+      "keyword": "guitar lessons pearland tx",
+      "instrument": "guitar",
+      "city": "Pearland",
+      "searchVolume": "high",
+      "competition": "high",
+      "priority": 8
+    },
+    {
+      "keyword": "voice lessons league city tx",
+      "instrument": "voice",
+      "city": "League City",
+      "searchVolume": "medium",
+      "competition": "low",
+      "priority": 9
+    },
+    {
+      "keyword": "drum lessons league city tx",
+      "instrument": "drums",
+      "city": "League City",
+      "searchVolume": "medium",
+      "competition": "low",
+      "priority": 10
+    },
+    {
+      "keyword": "violin lessons friendswood tx",
+      "instrument": "violin",
+      "city": "Friendswood",
+      "searchVolume": "medium",
+      "competition": "low",
+      "priority": 11
+    },
+    {
+      "keyword": "piano lessons clear lake tx",
+      "instrument": "piano",
+      "city": "Clear Lake",
+      "searchVolume": "medium",
+      "competition": "medium",
+      "priority": 12
+    },
+    {
+      "keyword": "guitar lessons clear lake tx",
+      "instrument": "guitar",
+      "city": "Clear Lake",
+      "searchVolume": "medium",
+      "competition": "medium",
+      "priority": 13
+    },
+    {
+      "keyword": "piano lessons sugar land tx",
+      "instrument": "piano",
+      "city": "Sugar Land",
+      "searchVolume": "high",
+      "competition": "high",
+      "priority": 14
+    },
+    {
+      "keyword": "guitar lessons sugar land tx",
+      "instrument": "guitar",
+      "city": "Sugar Land",
+      "searchVolume": "high",
+      "competition": "high",
+      "priority": 15
+    },
+    {
+      "keyword": "bass lessons friendswood tx",
+      "instrument": "bass",
+      "city": "Friendswood",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 16
+    },
+    {
+      "keyword": "ukulele lessons friendswood tx",
+      "instrument": "ukulele",
+      "city": "Friendswood",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 17
+    },
+    {
+      "keyword": "voice lessons pearland tx",
+      "instrument": "voice",
+      "city": "Pearland",
+      "searchVolume": "medium",
+      "competition": "medium",
+      "priority": 18
+    },
+    {
+      "keyword": "drum lessons pearland tx",
+      "instrument": "drums",
+      "city": "Pearland",
+      "searchVolume": "medium",
+      "competition": "medium",
+      "priority": 19
+    },
+    {
+      "keyword": "violin lessons league city tx",
+      "instrument": "violin",
+      "city": "League City",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 20
+    },
+    {
+      "keyword": "voice lessons clear lake tx",
+      "instrument": "voice",
+      "city": "Clear Lake",
+      "searchVolume": "medium",
+      "competition": "low",
+      "priority": 21
+    },
+    {
+      "keyword": "drum lessons clear lake tx",
+      "instrument": "drums",
+      "city": "Clear Lake",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 22
+    },
+    {
+      "keyword": "violin lessons pearland tx",
+      "instrument": "violin",
+      "city": "Pearland",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 23
+    },
+    {
+      "keyword": "bass lessons league city tx",
+      "instrument": "bass",
+      "city": "League City",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 24
+    },
+    {
+      "keyword": "ukulele lessons league city tx",
+      "instrument": "ukulele",
+      "city": "League City",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 25
+    },
+    {
+      "keyword": "voice lessons sugar land tx",
+      "instrument": "voice",
+      "city": "Sugar Land",
+      "searchVolume": "medium",
+      "competition": "medium",
+      "priority": 26
+    },
+    {
+      "keyword": "drum lessons sugar land tx",
+      "instrument": "drums",
+      "city": "Sugar Land",
+      "searchVolume": "medium",
+      "competition": "medium",
+      "priority": 27
+    },
+    {
+      "keyword": "violin lessons clear lake tx",
+      "instrument": "violin",
+      "city": "Clear Lake",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 28
+    },
+    {
+      "keyword": "bass lessons pearland tx",
+      "instrument": "bass",
+      "city": "Pearland",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 29
+    },
+    {
+      "keyword": "ukulele lessons pearland tx",
+      "instrument": "ukulele",
+      "city": "Pearland",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 30
+    },
+    {
+      "keyword": "violin lessons sugar land tx",
+      "instrument": "violin",
+      "city": "Sugar Land",
+      "searchVolume": "low",
+      "competition": "medium",
+      "priority": 31
+    },
+    {
+      "keyword": "bass lessons clear lake tx",
+      "instrument": "bass",
+      "city": "Clear Lake",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 32
+    },
+    {
+      "keyword": "ukulele lessons clear lake tx",
+      "instrument": "ukulele",
+      "city": "Clear Lake",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 33
+    },
+    {
+      "keyword": "bass lessons sugar land tx",
+      "instrument": "bass",
+      "city": "Sugar Land",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 34
+    },
+    {
+      "keyword": "ukulele lessons sugar land tx",
+      "instrument": "ukulele",
+      "city": "Sugar Land",
+      "searchVolume": "low",
+      "competition": "low",
+      "priority": 35
+    }
+  ],
+  "secondaryKeywords": [
+    {
+      "keyword": "kids piano lessons near me",
+      "instrument": "piano",
+      "intent": "local",
+      "searchVolume": "high",
+      "priority": 1
+    },
+    {
+      "keyword": "kids guitar lessons near me",
+      "instrument": "guitar",
+      "intent": "local",
+      "searchVolume": "high",
+      "priority": 2
+    },
+    {
+      "keyword": "adult piano lessons friendswood",
+      "instrument": "piano",
+      "intent": "adult",
+      "searchVolume": "medium",
+      "priority": 3
+    },
+    {
+      "keyword": "adult guitar lessons friendswood",
+      "instrument": "guitar",
+      "intent": "adult",
+      "searchVolume": "medium",
+      "priority": 4
+    },
+    {
+      "keyword": "kids voice lessons near me",
+      "instrument": "voice",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 5
+    },
+    {
+      "keyword": "kids drum lessons near me",
+      "instrument": "drums",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 6
+    },
+    {
+      "keyword": "beginner piano lessons friendswood",
+      "instrument": "piano",
+      "intent": "beginner",
+      "searchVolume": "medium",
+      "priority": 7
+    },
+    {
+      "keyword": "beginner guitar lessons friendswood",
+      "instrument": "guitar",
+      "intent": "beginner",
+      "searchVolume": "medium",
+      "priority": 8
+    },
+    {
+      "keyword": "music lessons friendswood tx",
+      "instrument": "general",
+      "intent": "local",
+      "searchVolume": "high",
+      "priority": 9
+    },
+    {
+      "keyword": "music lessons league city tx",
+      "instrument": "general",
+      "intent": "local",
+      "searchVolume": "high",
+      "priority": 10
+    },
+    {
+      "keyword": "music school friendswood",
+      "instrument": "general",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 11
+    },
+    {
+      "keyword": "kids violin lessons near me",
+      "instrument": "violin",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 12
+    },
+    {
+      "keyword": "adult voice lessons league city",
+      "instrument": "voice",
+      "intent": "adult",
+      "searchVolume": "low",
+      "priority": 13
+    },
+    {
+      "keyword": "singing lessons friendswood tx",
+      "instrument": "voice",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 14
+    },
+    {
+      "keyword": "singing lessons league city tx",
+      "instrument": "voice",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 15
+    },
+    {
+      "keyword": "best music lessons friendswood",
+      "instrument": "general",
+      "intent": "comparison",
+      "searchVolume": "medium",
+      "priority": 16
+    },
+    {
+      "keyword": "music lessons for kids friendswood",
+      "instrument": "general",
+      "intent": "kids",
+      "searchVolume": "medium",
+      "priority": 17
+    },
+    {
+      "keyword": "private music lessons friendswood",
+      "instrument": "general",
+      "intent": "private",
+      "searchVolume": "medium",
+      "priority": 18
+    },
+    {
+      "keyword": "affordable music lessons friendswood",
+      "instrument": "general",
+      "intent": "price",
+      "searchVolume": "low",
+      "priority": 19
+    },
+    {
+      "keyword": "adult drum lessons league city",
+      "instrument": "drums",
+      "intent": "adult",
+      "searchVolume": "low",
+      "priority": 20
+    },
+    {
+      "keyword": "kids ukulele lessons near me",
+      "instrument": "ukulele",
+      "intent": "local",
+      "searchVolume": "low",
+      "priority": 21
+    },
+    {
+      "keyword": "bass guitar lessons near me",
+      "instrument": "bass",
+      "intent": "local",
+      "searchVolume": "low",
+      "priority": 22
+    },
+    {
+      "keyword": "music lessons pearland tx",
+      "instrument": "general",
+      "intent": "local",
+      "searchVolume": "high",
+      "priority": 23
+    },
+    {
+      "keyword": "music lessons clear lake tx",
+      "instrument": "general",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 24
+    },
+    {
+      "keyword": "music lessons sugar land tx",
+      "instrument": "general",
+      "intent": "local",
+      "searchVolume": "high",
+      "priority": 25
+    },
+    {
+      "keyword": "how much do piano lessons cost friendswood",
+      "instrument": "piano",
+      "intent": "price",
+      "searchVolume": "low",
+      "priority": 26
+    },
+    {
+      "keyword": "how much do guitar lessons cost",
+      "instrument": "guitar",
+      "intent": "price",
+      "searchVolume": "medium",
+      "priority": 27
+    },
+    {
+      "keyword": "best age to start piano lessons",
+      "instrument": "piano",
+      "intent": "informational",
+      "searchVolume": "high",
+      "priority": 28
+    },
+    {
+      "keyword": "best age to start guitar lessons",
+      "instrument": "guitar",
+      "intent": "informational",
+      "searchVolume": "medium",
+      "priority": 29
+    },
+    {
+      "keyword": "first guitar for kids",
+      "instrument": "guitar",
+      "intent": "informational",
+      "searchVolume": "high",
+      "priority": 30
+    },
+    {
+      "keyword": "how to choose a piano teacher",
+      "instrument": "piano",
+      "intent": "informational",
+      "searchVolume": "medium",
+      "priority": 31
+    },
+    {
+      "keyword": "benefits of music lessons for kids",
+      "instrument": "general",
+      "intent": "informational",
+      "searchVolume": "high",
+      "priority": 32
+    },
+    {
+      "keyword": "music lessons for adults near me",
+      "instrument": "general",
+      "intent": "adult",
+      "searchVolume": "medium",
+      "priority": 33
+    },
+    {
+      "keyword": "guitar lessons for teens friendswood",
+      "instrument": "guitar",
+      "intent": "teen",
+      "searchVolume": "low",
+      "priority": 34
+    },
+    {
+      "keyword": "piano recitals friendswood tx",
+      "instrument": "piano",
+      "intent": "event",
+      "searchVolume": "low",
+      "priority": 35
+    },
+    {
+      "keyword": "summer music camps friendswood",
+      "instrument": "general",
+      "intent": "seasonal",
+      "searchVolume": "medium",
+      "priority": 36
+    },
+    {
+      "keyword": "after school music lessons friendswood",
+      "instrument": "general",
+      "intent": "scheduling",
+      "searchVolume": "low",
+      "priority": 37
+    },
+    {
+      "keyword": "online vs in person music lessons",
+      "instrument": "general",
+      "intent": "informational",
+      "searchVolume": "medium",
+      "priority": 38
+    },
+    {
+      "keyword": "music teacher friendswood tx",
+      "instrument": "general",
+      "intent": "local",
+      "searchVolume": "medium",
+      "priority": 39
+    },
+    {
+      "keyword": "guitar teacher near me friendswood",
+      "instrument": "guitar",
+      "intent": "local",
+      "searchVolume": "low",
+      "priority": 40
+    }
+  ]
+}

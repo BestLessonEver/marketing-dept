@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLE Post Review</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; }
+
+    header { background: linear-gradient(135deg, #1a0533 0%, #0d1b2a 100%); padding: 24px 32px; border-bottom: 1px solid #2a2a3a; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 22px; color: #fff; }
+    header h1 span { color: #a855f7; }
+    .stats { display: flex; gap: 20px; font-size: 13px; }
+    .stat { padding: 6px 14px; border-radius: 20px; background: #1a1a2e; }
+    .stat.pending { border: 1px solid #f59e0b; color: #f59e0b; }
+    .stat.approved { border: 1px solid #10b981; color: #10b981; }
+    .stat.rejected { border: 1px solid #ef4444; color: #ef4444; }
+    .stat.published { border: 1px solid #a855f7; color: #a855f7; }
+
+    .filters { padding: 16px 32px; display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid #1a1a2a; background: #0f0f1a; }
+    .filter-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid #2a2a3a; background: transparent; color: #888; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+    .filter-btn:hover { border-color: #a855f7; color: #a855f7; }
+    .filter-btn.active { background: #a855f7; border-color: #a855f7; color: #fff; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; padding: 24px 32px; }
+
+    .card { background: #111118; border: 1px solid #1e1e2e; border-radius: 12px; overflow: hidden; transition: all 0.2s; }
+    .card:hover { border-color: #3a3a5a; transform: translateY(-2px); }
+    .card.status-approved { border-color: #10b981; }
+    .card.status-rejected { border-color: #ef4444; opacity: 0.6; }
+    .card.status-published { border-color: #a855f7; }
+
+    .card-header { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1a1a2a; }
+    .card-header .post-num { font-weight: 700; color: #a855f7; font-size: 14px; }
+    .card-tags { display: flex; gap: 6px; }
+    .tag { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+    .tag.pillar { background: #1a1a2e; color: #8b8baf; }
+    .tag.platform { background: #0d2137; color: #3b82f6; }
+    .tag.format { background: #1a0f0f; color: #f59e0b; }
+
+    .card-image { width: 100%; aspect-ratio: 1; object-fit: cover; background: #0a0a15; display: flex; align-items: center; justify-content: center; color: #333; font-size: 13px; position: relative; }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .card-image .placeholder { padding: 20px; text-align: center; font-style: italic; color: #444; font-size: 12px; line-height: 1.5; }
+    .gen-img-btn { position: absolute; bottom: 12px; right: 12px; padding: 8px 16px; background: rgba(168, 85, 247, 0.9); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px); }
+    .gen-img-btn:hover { background: #a855f7; }
+    .gen-img-btn:disabled { background: #444; cursor: wait; }
+
+    .card-body { padding: 18px; }
+    .post-copy { font-size: 15px; line-height: 1.6; color: #d0d0d0; white-space: pre-wrap; min-height: 60px; }
+    textarea.edit-copy { width: 100%; min-height: 120px; background: #0a0a15; border: 1px solid #2a2a3a; border-radius: 8px; color: #d0d0d0; font-size: 14px; line-height: 1.6; padding: 12px; font-family: inherit; resize: vertical; }
+
+    .card-actions { padding: 12px 18px; border-top: 1px solid #1a1a2a; display: flex; gap: 8px; justify-content: space-between; }
+    .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+    .btn-approve { background: #064e3b; color: #10b981; }
+    .btn-approve:hover { background: #065f46; }
+    .btn-reject { background: #3b1111; color: #ef4444; }
+    .btn-reject:hover { background: #4c1515; }
+    .btn-edit { background: #1a1a2e; color: #8b8baf; }
+    .btn-edit:hover { background: #252540; }
+    .btn-publish { background: #4c1d95; color: #c4b5fd; }
+    .btn-publish:hover { background: #5b21b6; }
+    .btn-save { background: #064e3b; color: #10b981; }
+    .btn-cancel { background: #1a1a2e; color: #888; }
+    .btn-reset { background: #1a1a2e; color: #f59e0b; }
+
+    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .status-badge.pending { background: #1a1500; color: #f59e0b; }
+    .status-badge.approved { background: #001a0f; color: #10b981; }
+    .status-badge.rejected { background: #1a0505; color: #ef4444; }
+    .status-badge.published { background: #1a0533; color: #a855f7; }
+
+    .bulk-actions { padding: 16px 32px; display: flex; gap: 12px; align-items: center; background: #0f0f1a; border-bottom: 1px solid #1a1a2a; }
+    .bulk-actions .btn { padding: 10px 24px; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #10b981; color: #fff; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; }
+    .toast.error { background: #ef4444; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #151520; border: 1px solid #2a2a3a; border-radius: 16px; width: 600px; max-width: 90vw; max-height: 85vh; overflow-y: auto; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid #1e1e2e; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h2 { font-size: 18px; color: #fff; }
+    .modal-close { background: none; border: none; color: #666; font-size: 24px; cursor: pointer; }
+    .modal-close:hover { color: #fff; }
+    .modal-body { padding: 24px; }
+    .modal-body label { display: block; font-size: 13px; color: #888; margin-bottom: 6px; font-weight: 500; }
+    .modal-body textarea { width: 100%; min-height: 140px; background: #0a0a15; border: 1px solid #2a2a3a; border-radius: 8px; color: #d0d0d0; font-size: 14px; line-height: 1.6; padding: 12px; font-family: inherit; resize: vertical; margin-bottom: 16px; }
+    .modal-body .hint { font-size: 12px; color: #555; margin-bottom: 16px; line-height: 1.5; }
+    .modal-body .preview-row { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+    .modal-body .preview-img { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; border: 1px solid #2a2a3a; }
+    .modal-body .preview-text { font-size: 13px; color: #666; font-style: italic; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid #1e1e2e; display: flex; gap: 8px; justify-content: flex-end; }
+    .modal-footer .btn { padding: 10px 24px; }
+
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; padding: 12px; }
+      header { flex-direction: column; gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>BLE</span> Post Review Dashboard</h1>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="pending">Pending</button>
+    <button class="filter-btn" data-filter="approved">Approved</button>
+    <button class="filter-btn" data-filter="rejected">Rejected</button>
+    <button class="filter-btn" data-filter="published">Published</button>
+    <span style="color:#333; margin: 0 4px">|</span>
+    <button class="filter-btn" data-filter="Student Highlight">Students</button>
+    <button class="filter-btn" data-filter="Practice Tips">Tips</button>
+    <button class="filter-btn" data-filter="Teacher Spotlight">Teachers</button>
+    <button class="filter-btn" data-filter="Behind the Scenes">BTS</button>
+  </div>
+
+  <div class="bulk-actions">
+    <button class="btn btn-publish" onclick="publishAllApproved()">Publish All Approved to Facebook</button>
+    <button class="btn btn-approve" onclick="approveAllPending()">Approve All Pending</button>
+    <span id="bulk-status" style="color:#666; font-size:13px;"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="toast" id="toast"></div>
+
+  <!-- Image Prompt Modal -->
+  <div class="modal-overlay" id="promptModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Generate Image - Post <span id="modal-post-num"></span></h2>
+        <button class="modal-close" onclick="closePromptModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-preview-row" class="preview-row" style="display:none;">
+          <img id="modal-preview-img" class="preview-img" src="" alt="" />
+          <span class="preview-text">Current image - generating a new one will replace it</span>
+        </div>
+
+        <label>Style Preset</label>
+        <div style="display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap;">
+          <button class="filter-btn active" onclick="setStyle(this, 'cyberpunk')">Cyberpunk Neon</button>
+          <button class="filter-btn" onclick="setStyle(this, 'cartoon')">Cartoonish</button>
+          <button class="filter-btn" onclick="setStyle(this, 'retro')">Retro Pop Art</button>
+          <button class="filter-btn" onclick="setStyle(this, 'minimal')">Minimal Flat</button>
+          <button class="filter-btn" onclick="setStyle(this, 'custom')">Custom</button>
+        </div>
+
+        <label>Image Prompt</label>
+        <textarea id="modal-prompt"></textarea>
+        <div class="hint">Describe the image you want. The style preset fills in art direction. Edit freely - DALL-E works best with specific, vivid descriptions. "No text, no words" is auto-appended.</div>
+
+        <label>Post Copy (for reference)</label>
+        <div id="modal-copy" style="font-size:13px; color:#888; background:#0a0a15; padding:12px; border-radius:8px; line-height:1.5;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closePromptModal()">Cancel</button>
+        <button class="btn btn-publish" id="modal-generate-btn" onclick="submitGenerate()">Generate Image</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let posts = [];
+    let activeFilter = 'all';
+    let editingId = null;
+
+    async function loadPosts() {
+      const res = await fetch('/api/posts');
+      posts = await res.json();
+      render();
+    }
+
+    function render() {
+      const filtered = posts.filter(p => {
+        if (activeFilter === 'all') return true;
+        if (['pending','approved','rejected','published'].includes(activeFilter)) return p.status === activeFilter;
+        return p.pillar === activeFilter;
+      });
+
+      const counts = { pending: 0, approved: 0, rejected: 0, published: 0 };
+      posts.forEach(p => counts[p.status] = (counts[p.status] || 0) + 1);
+
+      document.getElementById('stats').innerHTML = `
+        <span class="stat pending">Pending: ${counts.pending || 0}</span>
+        <span class="stat approved">Approved: ${counts.approved || 0}</span>
+        <span class="stat rejected">Rejected: ${counts.rejected || 0}</span>
+        <span class="stat published">Published: ${counts.published || 0}</span>
+      `;
+
+      document.getElementById('grid').innerHTML = filtered.map(p => `
+        <div class="card status-${p.status}" id="card-${p.id}">
+          <div class="card-header">
+            <span class="post-num">#${p.id}</span>
+            <div class="card-tags">
+              <span class="tag pillar">${p.pillar}</span>
+              <span class="tag platform">${p.platform}</span>
+              <span class="tag format">${p.format}</span>
+            </div>
+          </div>
+
+          <div class="card-image">
+            ${p.imageUrl
+              ? `<img src="${p.imageUrl}" alt="Post ${p.id}" />`
+              : `<div class="placeholder">${p.imageNote || 'Text-only post'}</div>`
+            }
+            ${p.imageNote ? `<button class="gen-img-btn" onclick="generateImage(${p.id}, this)" ${p.imageUrl ? 'style="opacity:0.7"' : ''}>
+              ${p.imageUrl ? 'Regenerate' : 'Generate Image'}
+            </button>` : ''}
+          </div>
+
+          <div class="card-body">
+            ${editingId === p.id
+              ? `<textarea class="edit-copy" id="edit-${p.id}">${escapeHtml(p.copy)}</textarea>`
+              : `<div class="post-copy">${escapeHtml(p.copy)}</div>`
+            }
+          </div>
+
+          <div class="card-actions">
+            <div>
+              <span class="status-badge ${p.status}">${p.status}</span>
+            </div>
+            <div style="display:flex; gap:6px;">
+              ${editingId === p.id ? `
+                <button class="btn btn-save" onclick="saveEdit(${p.id})">Save</button>
+                <button class="btn btn-cancel" onclick="cancelEdit()">Cancel</button>
+              ` : `
+                ${p.status !== 'published' ? `
+                  <button class="btn btn-edit" onclick="startEdit(${p.id})">Edit</button>
+                  <button class="btn btn-approve" onclick="setStatus(${p.id}, 'approved')">Approve</button>
+                  <button class="btn btn-reject" onclick="setStatus(${p.id}, 'rejected')">Reject</button>
+                ` : ''}
+                ${p.status === 'approved' ? `<button class="btn btn-publish" onclick="publishPost(${p.id})">Publish</button>` : ''}
+                ${p.status === 'rejected' ? `<button class="btn btn-reset" onclick="setStatus(${p.id}, 'pending')">Reset</button>` : ''}
+              `}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function setStatus(id, status) {
+      await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      posts.find(p => p.id === id).status = status;
+      render();
+      showToast(`Post #${id} ${status}`);
+    }
+
+    function startEdit(id) {
+      editingId = id;
+      render();
+      document.getElementById(`edit-${id}`).focus();
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      render();
+    }
+
+    async function saveEdit(id) {
+      const copy = document.getElementById(`edit-${id}`).value;
+      await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ copy })
+      });
+      posts.find(p => p.id === id).copy = copy;
+      editingId = null;
+      render();
+      showToast('Post updated');
+    }
+
+    let modalPostId = null;
+    let currentStyle = 'cyberpunk';
+
+    const stylePresets = {
+      cyberpunk: "Stylized digital illustration, vibrant neon colors, futuristic cyberpunk aesthetic mixed with warm fun energy",
+      cartoon: "Bold cartoonish illustration, thick outlines, bright saturated colors, exaggerated proportions, playful comic book style",
+      retro: "Retro pop art style, bold primary colors, halftone dots, vintage poster aesthetic, Warhol-inspired",
+      minimal: "Clean minimal flat illustration, simple shapes, soft pastel colors, modern vector art style",
+      custom: ""
+    };
+
+    function openPromptModal(id) {
+      modalPostId = id;
+      const post = posts.find(p => p.id === id);
+      document.getElementById('modal-post-num').textContent = `#${id}`;
+      document.getElementById('modal-copy').textContent = post.copy;
+
+      // Show current image if exists
+      const previewRow = document.getElementById('modal-preview-row');
+      if (post.imageUrl) {
+        previewRow.style.display = 'flex';
+        document.getElementById('modal-preview-img').src = post.imageUrl;
+      } else {
+        previewRow.style.display = 'none';
+      }
+
+      // Build default prompt
+      const scene = post.imageNote || post.copy;
+      const defaultPrompt = `${stylePresets[currentStyle]}. Scene: ${scene}. Context: music lesson studio for kids and teens. No text, no words, no letters, no writing, no watermarks.`;
+      document.getElementById('modal-prompt').value = defaultPrompt;
+
+      document.getElementById('promptModal').classList.add('show');
+    }
+
+    function closePromptModal() {
+      document.getElementById('promptModal').classList.remove('show');
+      modalPostId = null;
+    }
+
+    function setStyle(btn, style) {
+      currentStyle = style;
+      btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (modalPostId) {
+        const post = posts.find(p => p.id === modalPostId);
+        const scene = post.imageNote || post.copy;
+        if (style === 'custom') {
+          document.getElementById('modal-prompt').value = `Scene: ${scene}. No text, no words, no letters, no writing.`;
+        } else {
+          document.getElementById('modal-prompt').value = `${stylePresets[style]}. Scene: ${scene}. Context: music lesson studio for kids and teens. No text, no words, no letters, no writing, no watermarks.`;
+        }
+        document.getElementById('modal-prompt').focus();
+      }
+    }
+
+    async function submitGenerate() {
+      const prompt = document.getElementById('modal-prompt').value;
+      const btn = document.getElementById('modal-generate-btn');
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+
+      try {
+        const res = await fetch(`/api/posts/${modalPostId}/generate-image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        if (data.imageUrl) {
+          posts.find(p => p.id === modalPostId).imageUrl = data.imageUrl;
+          closePromptModal();
+          render();
+          showToast(`Image generated for Post #${modalPostId}`);
+        } else {
+          showToast(`Error: ${data.error}`, true);
+        }
+      } catch (e) {
+        showToast('Image generation failed', true);
+      }
+      btn.disabled = false;
+      btn.textContent = 'Generate Image';
+    }
+
+    // Legacy function - now opens modal
+    function generateImage(id, btn) {
+      openPromptModal(id);
+    }
+
+    // Close modal on overlay click
+    document.getElementById('promptModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('promptModal')) closePromptModal();
+    });
+
+    async function publishPost(id) {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Publishing...';
+      try {
+        const res = await fetch(`/api/posts/${id}/publish`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          posts.find(p => p.id === id).status = 'published';
+          render();
+          showToast(`Post #${id} published to Facebook!`);
+        } else {
+          showToast(`Error: ${JSON.stringify(data.error)}`, true);
+          btn.disabled = false;
+          btn.textContent = 'Publish';
+        }
+      } catch (e) {
+        showToast('Publish failed', true);
+        btn.disabled = false;
+        btn.textContent = 'Publish';
+      }
+    }
+
+    async function publishAllApproved() {
+      const approved = posts.filter(p => p.status === 'approved');
+      if (!approved.length) return showToast('No approved posts to publish', true);
+      if (!confirm(`Publish ${approved.length} posts to Facebook?`)) return;
+
+      document.getElementById('bulk-status').textContent = `Publishing ${approved.length} posts...`;
+      let success = 0;
+      for (const post of approved) {
+        try {
+          const res = await fetch(`/api/posts/${post.id}/publish`, { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            post.status = 'published';
+            success++;
+            document.getElementById('bulk-status').textContent = `Published ${success}/${approved.length}...`;
+            render();
+          }
+        } catch (e) { /* continue */ }
+        // Small delay between posts
+        await new Promise(r => setTimeout(r, 1000));
+      }
+      document.getElementById('bulk-status').textContent = '';
+      showToast(`Published ${success}/${approved.length} posts!`);
+    }
+
+    async function approveAllPending() {
+      const pending = posts.filter(p => p.status === 'pending');
+      if (!pending.length) return showToast('No pending posts', true);
+      for (const post of pending) {
+        await fetch(`/api/posts/${post.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'approved' })
+        });
+        post.status = 'approved';
+      }
+      render();
+      showToast(`Approved ${pending.length} posts`);
+    }
+
+    // Filter buttons
+    document.getElementById('filters').addEventListener('click', e => {
+      if (e.target.classList.contains('filter-btn')) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        activeFilter = e.target.dataset.filter;
+        render();
+      }
+    });
+
+    function showToast(msg, isError = false) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast show${isError ? ' error' : ''}`;
+      setTimeout(() => t.className = 'toast', 3000);
+    }
+
+    loadPosts();
+  </script>
+</body>
+</html>
