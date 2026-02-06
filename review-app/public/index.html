@@ -215,11 +215,12 @@
                 : `<div class="placeholder">${p.imageNote || 'Text-only post'}</div>`
             }
             ${!generatingIds.has(p.id) ? `
+              <label class="gen-img-btn" style="cursor:pointer; position:absolute; bottom:12px; left:12px;">
+                Upload Photo
+                <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(${p.id}, this)" />
+              </label>
               <div style="position:absolute; bottom:12px; right:12px; display:flex; gap:6px;">
-                <label class="gen-img-btn" style="cursor:pointer;">
-                  Upload Photo
-                  <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(${p.id}, this)" />
-                </label>
+                ${p.imageUrl ? `<button class="gen-img-btn" style="background:rgba(239,68,68,0.85);" onclick="removePhoto(${p.id})">Remove</button>` : ''}
                 <button class="gen-img-btn" onclick="generateImage(${p.id}, this)">
                   ${p.imageUrl ? 'Regenerate' : 'Generate AI'}
                 </button>
@@ -383,7 +384,7 @@
         const data = await res.json();
         generatingIds.delete(id);
         if (data.imageUrl) {
-          posts.find(p => p.id === id).imageUrl = data.imageUrl;
+          posts.find(p => p.id === id).imageUrl = data.imageUrl + '?t=' + Date.now();
           render();
           showToast(`Image ready for Post #${id}`);
         } else {
@@ -420,6 +421,17 @@
       } catch (e) {
         showToast('Upload failed', true);
       }
+    }
+
+    async function removePhoto(id) {
+      await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: null })
+      });
+      posts.find(p => p.id === id).imageUrl = null;
+      render();
+      showToast(`Photo removed from Post #${id}`);
     }
 
     // Close modal on overlay click
