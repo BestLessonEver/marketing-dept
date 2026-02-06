@@ -89,6 +89,7 @@ app.put("/api/posts/:id", (req, res) => {
   if (req.body.copy !== undefined) posts[idx].copy = req.body.copy;
   if (req.body.status !== undefined) posts[idx].status = req.body.status;
   if (req.body.imageUrl !== undefined) posts[idx].imageUrl = req.body.imageUrl;
+  if (req.body.scheduledFor !== undefined) posts[idx].scheduledFor = req.body.scheduledFor;
 
   writePosts(posts);
   res.json(posts[idx]);

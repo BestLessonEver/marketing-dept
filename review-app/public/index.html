@@ -235,10 +235,21 @@
             }
           </div>
 
+          ${p.status !== 'published' ? `
+          <div style="padding:8px 18px; border-top:1px solid #1a1a2a; display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; color:#666;">Schedule:</span>
+            <input type="datetime-local" value="${p.scheduledFor || ''}" onchange="setSchedule(${p.id}, this.value)" style="background:#0a0a15; border:1px solid #2a2a3a; border-radius:6px; color:#d0d0d0; padding:4px 8px; font-size:12px; font-family:inherit;" />
+            ${p.scheduledFor ? `<button onclick="setSchedule(${p.id}, '')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:16px;">&times;</button>` : ''}
+          </div>
+          ` : `
+          <div style="padding:8px 18px; border-top:1px solid #1a1a2a; display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; color:#a855f7;">${p.scheduledFor ? new Date(p.scheduledFor).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : 'Published'}</span>
+          </div>
+          `}
+
           <div class="card-actions">
-            <div style="display:flex; align-items:center; gap:8px;">
+            <div>
               <span class="status-badge ${p.status}">${p.status}</span>
-              ${p.publishedAt ? `<span style="font-size:11px; color:#666;">${new Date(p.publishedAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' })}</span>` : ''}
             </div>
             <div style="display:flex; gap:6px;">
               ${editingId === p.id ? `
@@ -250,7 +261,8 @@
                   <button class="btn btn-approve" onclick="setStatus(${p.id}, 'approved')">Approve</button>
                   <button class="btn btn-reject" onclick="setStatus(${p.id}, 'rejected')">Reject</button>
                 ` : ''}
-                ${p.status === 'approved' ? `<button class="btn btn-publish" onclick="publishPost(${p.id})">Publish</button>` : ''}
+                ${p.status === 'approved' && p.scheduledFor ? `<button class="btn btn-publish" onclick="publishPost(${p.id})">Schedule</button>` : ''}
+                ${p.status === 'approved' && !p.scheduledFor ? `<span style="font-size:11px; color:#555;">Set date to publish</span>` : ''}
                 ${p.status === 'rejected' ? `<button class="btn btn-reset" onclick="setStatus(${p.id}, 'pending')">Reset</button>` : ''}
               `}
             </div>
@@ -284,6 +296,18 @@
         render();
       }
       showToast(`Post #${id} ${status}`);
+    }
+
+    async function setSchedule(id, value) {
+      const scheduledFor = value || null;
+      await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scheduledFor })
+      });
+      posts.find(p => p.id === id).scheduledFor = scheduledFor;
+      render();
+      showToast(scheduledFor ? `Post #${id} scheduled` : `Post #${id} schedule cleared`);
     }
 
     function startEdit(id) {
@@ -445,7 +469,16 @@
       btn.disabled = true;
       btn.textContent = 'Publishing...';
       try {
-        const res = await fetch(`/api/posts/${id}/publish`, { method: 'POST' });
+        const post = posts.find(p => p.id === id);
+        const body = {};
+        if (post.scheduledFor) {
+          body.scheduledTime = Math.floor(new Date(post.scheduledFor).getTime() / 1000);
+        }
+        const res = await fetch(`/api/posts/${id}/publish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
         const data = await res.json();
         if (data.success) {
           posts.find(p => p.id === id).status = 'published';
@@ -466,18 +499,28 @@
     async function publishAllApproved() {
       const approved = posts.filter(p => p.status === 'approved');
       if (!approved.length) return showToast('No approved posts to publish', true);
-      if (!confirm(`Publish ${approved.length} posts to Facebook?`)) return;
+      const unscheduled = approved.filter(p => !p.scheduledFor);
+      if (unscheduled.length) return showToast(`${unscheduled.length} approved post(s) have no scheduled date. Set dates first.`, true);
+      if (!confirm(`Schedule ${approved.length} posts to Facebook?`)) return;
 
-      document.getElementById('bulk-status').textContent = `Publishing ${approved.length} posts...`;
+      document.getElementById('bulk-status').textContent = `Scheduling ${approved.length} posts...`;
       let success = 0;
       for (const post of approved) {
         try {
-          const res = await fetch(`/api/posts/${post.id}/publish`, { method: 'POST' });
+          const body = {};
+          if (post.scheduledFor) {
+            body.scheduledTime = Math.floor(new Date(post.scheduledFor).getTime() / 1000);
+          }
+          const res = await fetch(`/api/posts/${post.id}/publish`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
           const data = await res.json();
           if (data.success) {
             post.status = 'published';
             success++;
-            document.getElementById('bulk-status').textContent = `Published ${success}/${approved.length}...`;
+            document.getElementById('bulk-status').textContent = `Scheduled ${success}/${approved.length}...`;
             render();
           }
         } catch (e) { /* continue */ }
@@ -485,7 +528,7 @@
         await new Promise(r => setTimeout(r, 1000));
       }
       document.getElementById('bulk-status').textContent = '';
-      showToast(`Published ${success}/${approved.length} posts!`);
+      showToast(`Scheduled ${success}/${approved.length} posts!`);
     }
 
     async function approveAllPending() {
