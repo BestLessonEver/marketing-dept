@@ -6,8 +6,9 @@
     "format": "Photo caption",
     "copy": "POV: You signed your kid up for guitar lessons and now they won't stop playing the first 7 notes of Mario Bros. You're welcome.",
     "imageNote": "Photo of a young student mid-shred with a big grin, or a staged \"parent covering ears\" shot",
-    "status": "pending",
-    "imageUrl": null
+    "status": "published",
+    "imageUrl": "/images/post-1.png",
+    "fbPostId": "1376116561194451"
   },
   {
     "id": 2,
@@ -16,8 +17,9 @@
     "format": "Carousel idea",
     "copy": "Your practice routine is not \"playing the same song you already know for 20 minutes.\" That's a concert. Practice means the stuff that's hard. Here's a 10-minute routine that actually moves the needle.",
     "imageNote": "Carousel: Slide 1 - \"Your practice routine needs work.\" Slide 2 - 2 min scales/warmup, Slide 3 - 3 min trouble spots, Slide 4 - 3 min new material, Slide 5 - 2 min play something fun. Slide 6 - \"That's it. 10 minutes. No excuses.\"",
-    "status": "pending",
-    "imageUrl": null
+    "status": "published",
+    "imageUrl": "/images/post-2.png",
+    "fbPostId": "1376116634527777"
   },
   {
     "id": 3,
@@ -26,7 +28,7 @@
     "format": "Photo caption",
     "copy": "Our teachers played a show last weekend. Your kid's piano teacher was headlining a jazz set at 11pm on Saturday. Most studios can't say that.",
     "imageNote": "Photo of a BLE teacher performing live at a gig",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -36,8 +38,9 @@
     "format": "Reel concept",
     "copy": "Things you hear walking down the hallway at BLE: a 7-year-old nailing a drum fill, a teenager belting Adele, someone's first piano chord ever, and at least one guitar solo that goes way too hard.",
     "imageNote": "Reel: Quick cuts of different lesson rooms, each with a few seconds of audio. End with a teacher bobbing their head approvingly.",
-    "status": "pending",
-    "imageUrl": null
+    "status": "published",
+    "imageUrl": "/images/post-4.png",
+    "fbPostId": "1376116704527770"
   },
   {
     "id": 5,
@@ -46,7 +49,7 @@
     "format": "Photo caption",
     "copy": "Six months ago this kid could barely hold a pick. Last Saturday he played his first solo in front of 50 people and didn't even flinch. We're not crying, you're crying. OK fine we're all crying.",
     "imageNote": "Photo of student performing at a recital, crowd visible",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -56,8 +59,9 @@
     "format": "Text",
     "copy": "Hot take: Practicing 10 minutes a day beats practicing 2 hours on Sunday. Your brain learns through repetition, not marathon sessions. Set a timer. Play every day. Watch what happens.",
     "imageNote": null,
-    "status": "pending",
-    "imageUrl": null
+    "status": "published",
+    "imageUrl": "/images/post-6.png",
+    "fbPostId": "1376116774527763"
   },
   {
     "id": 7,
@@ -77,7 +81,7 @@
     "copy": "When your student asks \"can I try something?\" and then plays something that wasn't even in the lesson plan. The best moments aren't scripted.",
     "imageNote": "Reel: Teacher reacting with genuine surprise/pride. Student plays something unexpected. Teacher's face says it all.",
     "status": "pending",
-    "imageUrl": null
+    "imageUrl": "/images/post-8.png"
   },
   {
     "id": 9,
@@ -87,7 +91,7 @@
     "copy": "If your kid says \"I already practiced\" and you didn't hear anything... they did not practice. Source: every music teacher ever.",
     "imageNote": null,
     "status": "pending",
-    "imageUrl": null
+    "imageUrl": "/images/post-9.png"
   },
   {
     "id": 10,
@@ -96,7 +100,7 @@
     "format": "Reel concept",
     "copy": "Studio tour but make it real. Here's the room where beginners have their first \"I actually did it\" moment. Here's where the advanced kids pretend they're at Madison Square Garden. Here's the water cooler where parents bond over recital anxiety.",
     "imageNote": "Reel: Casual, handheld walkthrough of the studio with text overlays for each room",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -106,7 +110,7 @@
     "format": "Photo caption",
     "copy": "The difference between a music teacher and a working musician who teaches? One shows you how to play a chord. The other shows you how that chord feels on stage at midnight in front of a crowd. All our teachers are the second kind.",
     "imageNote": "Photo of teacher in a teaching moment, or a collage of teachers performing vs. teaching",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -116,7 +120,7 @@
     "format": "Photo caption",
     "copy": "Started voice lessons because she was too shy to sing in front of her family. Just performed her first solo at the showcase. Her mom's reaction in the second pic is everything.",
     "imageNote": "Photo 1: Student singing on stage. Photo 2: Parent in audience visibly emotional",
-    "status": "pending",
+    "status": "rejected",
     "imageUrl": null
   },
   {
@@ -127,7 +131,7 @@
     "copy": "Mistakes parents make about practice (with love):\n1. Asking \"did you practice?\" instead of practicing WITH them\n2. Expecting perfection instead of progress\n3. Comparing to the kid who's been playing 3 years longer\n4. Turning it into a punishment\n\nYou're doing great. Just keep showing up.",
     "imageNote": "Carousel: Each slide is one mistake with a fun illustration or meme-style graphic. Final slide is encouraging.",
     "status": "pending",
-    "imageUrl": null
+    "imageUrl": "/images/post-13.png"
   },
   {
     "id": 14,

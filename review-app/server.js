@@ -37,6 +37,48 @@ app.get("/api/posts", (req, res) => {
   res.json(readPosts());
 });
 
+// UPLOAD a photo for a post
+app.post("/api/posts/:id/upload-image", (req, res) => {
+  const posts = readPosts();
+  const id = parseInt(req.params.id);
+  const idx = posts.findIndex((p) => p.id === id);
+  if (idx === -1) return res.status(404).json({ error: "Post not found" });
+
+  const imgDir = path.join(__dirname, "public", "images");
+  if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+
+  const chunks = [];
+  req.on("data", (chunk) => chunks.push(chunk));
+  req.on("end", () => {
+    const body = Buffer.concat(chunks);
+    const contentType = req.headers["content-type"] || "";
+    const boundaryMatch = contentType.match(/boundary=(.+)/);
+    if (!boundaryMatch) {
+      return res.status(400).json({ error: "No boundary found" });
+    }
+    const boundary = boundaryMatch[1];
+    const bodyStr = body.toString("latin1");
+    const parts = bodyStr.split("--" + boundary);
+
+    for (const part of parts) {
+      if (part.includes("filename=")) {
+        const headerEnd = part.indexOf("\r\n\r\n");
+        if (headerEnd === -1) continue;
+        const fileData = part.slice(headerEnd + 4);
+        const trimmed = fileData.replace(/\r\n$/, "");
+        const ext = part.includes("image/png") ? "png" : "jpg";
+        const imgPath = `/images/post-${id}.${ext}`;
+        const fullPath = path.join(__dirname, "public", imgPath);
+        fs.writeFileSync(fullPath, Buffer.from(trimmed, "latin1"));
+        posts[idx].imageUrl = imgPath;
+        writePosts(posts);
+        return res.json({ imageUrl: imgPath });
+      }
+    }
+    res.status(400).json({ error: "No image found in upload" });
+  });
+});
+
 // UPDATE a post (edit copy, change status)
 app.put("/api/posts/:id", (req, res) => {
   const posts = readPosts();

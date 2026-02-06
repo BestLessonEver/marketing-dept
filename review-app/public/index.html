@@ -27,6 +27,7 @@
 
     .card { background: #111118; border: 1px solid #1e1e2e; border-radius: 12px; overflow: hidden; transition: all 0.2s; }
     .card:hover { border-color: #3a3a5a; transform: translateY(-2px); }
+    .card.fade-out { opacity: 0; transform: scale(0.95); transition: all 0.4s ease; }
     .card.status-approved { border-color: #10b981; }
     .card.status-rejected { border-color: #ef4444; opacity: 0.6; }
     .card.status-published { border-color: #a855f7; }
@@ -76,6 +77,9 @@
     .toast { position: fixed; bottom: 24px; right: 24px; background: #10b981; color: #fff; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
     .toast.show { opacity: 1; }
     .toast.error { background: #ef4444; }
+
+    .spinner { width: 36px; height: 36px; border: 3px solid #2a2a3a; border-top-color: #a855f7; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
     .modal-overlay.show { display: flex; }
@@ -177,9 +181,9 @@
 
     function render() {
       const filtered = posts.filter(p => {
-        if (activeFilter === 'all') return true;
+        if (activeFilter === 'all') return p.status !== 'rejected';
         if (['pending','approved','rejected','published'].includes(activeFilter)) return p.status === activeFilter;
-        return p.pillar === activeFilter;
+        return p.pillar === activeFilter && p.status !== 'rejected';
       });
 
       const counts = { pending: 0, approved: 0, rejected: 0, published: 0 };
@@ -204,13 +208,23 @@
           </div>
 
           <div class="card-image">
-            ${p.imageUrl
-              ? `<img src="${p.imageUrl}" alt="Post ${p.id}" />`
-              : `<div class="placeholder">${p.imageNote || 'Text-only post'}</div>`
+            ${generatingIds.has(p.id)
+              ? `<div class="placeholder"><div class="spinner"></div><div style="margin-top:12px;">Generating image...</div></div>`
+              : p.imageUrl
+                ? `<img src="${p.imageUrl}" alt="Post ${p.id}" />`
+                : `<div class="placeholder">${p.imageNote || 'Text-only post'}</div>`
             }
-            ${p.imageNote ? `<button class="gen-img-btn" onclick="generateImage(${p.id}, this)" ${p.imageUrl ? 'style="opacity:0.7"' : ''}>
-              ${p.imageUrl ? 'Regenerate' : 'Generate Image'}
-            </button>` : ''}
+            ${!generatingIds.has(p.id) ? `
+              <div style="position:absolute; bottom:12px; right:12px; display:flex; gap:6px;">
+                <label class="gen-img-btn" style="cursor:pointer;">
+                  Upload Photo
+                  <input type="file" accept="image/*" style="display:none;" onchange="uploadPhoto(${p.id}, this)" />
+                </label>
+                <button class="gen-img-btn" onclick="generateImage(${p.id}, this)">
+                  ${p.imageUrl ? 'Regenerate' : 'Generate AI'}
+                </button>
+              </div>
+            ` : ''}
           </div>
 
           <div class="card-body">
@@ -256,7 +270,17 @@
         body: JSON.stringify({ status })
       });
       posts.find(p => p.id === id).status = status;
-      render();
+      if (status === 'rejected' && activeFilter !== 'rejected') {
+        const card = document.getElementById(`card-${id}`);
+        if (card) {
+          card.classList.add('fade-out');
+          setTimeout(() => render(), 400);
+        } else {
+          render();
+        }
+      } else {
+        render();
+      }
       showToast(`Post #${id} ${status}`);
     }
 
@@ -340,37 +364,62 @@
       }
     }
 
+    let generatingIds = new Set();
+
     async function submitGenerate() {
       const prompt = document.getElementById('modal-prompt').value;
-      const btn = document.getElementById('modal-generate-btn');
-      btn.disabled = true;
-      btn.textContent = 'Generating...';
+      const id = modalPostId;
+      generatingIds.add(id);
+      closePromptModal();
+      render();
+      showToast(`Generating image for Post #${id}...`);
 
       try {
-        const res = await fetch(`/api/posts/${modalPostId}/generate-image`, {
+        const res = await fetch(`/api/posts/${id}/generate-image`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt })
         });
         const data = await res.json();
+        generatingIds.delete(id);
         if (data.imageUrl) {
-          posts.find(p => p.id === modalPostId).imageUrl = data.imageUrl;
-          closePromptModal();
+          posts.find(p => p.id === id).imageUrl = data.imageUrl;
           render();
-          showToast(`Image generated for Post #${modalPostId}`);
+          showToast(`Image ready for Post #${id}`);
         } else {
+          render();
           showToast(`Error: ${data.error}`, true);
         }
       } catch (e) {
+        generatingIds.delete(id);
+        render();
         showToast('Image generation failed', true);
       }
-      btn.disabled = false;
-      btn.textContent = 'Generate Image';
     }
 
     // Legacy function - now opens modal
     function generateImage(id, btn) {
       openPromptModal(id);
+    }
+
+    async function uploadPhoto(id, input) {
+      const file = input.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('image', file);
+      try {
+        const res = await fetch(`/api/posts/${id}/upload-image`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.imageUrl) {
+          posts.find(p => p.id === id).imageUrl = data.imageUrl + '?t=' + Date.now();
+          render();
+          showToast(`Photo uploaded for Post #${id}`);
+        } else {
+          showToast('Upload failed', true);
+        }
+      } catch (e) {
+        showToast('Upload failed', true);
+      }
     }
 
     // Close modal on overlay click
