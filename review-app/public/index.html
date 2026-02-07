@@ -75,6 +75,7 @@
     .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
     .status-badge.pending { background: #1a1500; color: #f59e0b; }
     .status-badge.approved { background: #001a0f; color: #10b981; }
+    .status-badge.scheduled { background: #0a1a2a; color: #3b82f6; }
     .status-badge.rejected { background: #1a0505; color: #ef4444; }
     .status-badge.published { background: #1a0533; color: #a855f7; }
 
@@ -200,6 +201,7 @@
   <div id="social-view">
     <div class="filters" id="filters">
       <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="idea">Ideas</button>
       <button class="filter-btn" data-filter="pending">Pending</button>
       <button class="filter-btn" data-filter="approved">Approved</button>
       <button class="filter-btn" data-filter="rejected">Rejected</button>
@@ -212,7 +214,10 @@
     </div>
 
     <div class="bulk-actions">
-      <button class="btn btn-publish" onclick="openDriveForCaption()">✨ Photo from Drive → Generate Caption</button>
+      <input type="text" id="idea-topic-input" placeholder="Topic (blank = random)" style="background:#0a0a15; border:1px solid #2a2a3a; border-radius:6px; color:#d0d0d0; padding:8px 12px; font-size:13px; width:200px; font-family:inherit;" />
+      <button class="btn btn-publish" onclick="generateTextIdea()">💡 Generate Idea</button>
+      <button class="btn btn-publish" onclick="uploadPhotoForCaption()">📸 Upload Photo → Caption</button>
+      <button class="btn btn-publish" onclick="openDriveForCaption()">☁️ Google Drive → Caption</button>
       <button class="btn btn-publish" onclick="publishAllApproved()">Publish All Approved to Facebook</button>
       <button class="btn btn-approve" onclick="approveAllPending()">Approve All Pending</button>
       <span id="bulk-status" style="color:#666; font-size:13px;"></span>
@@ -387,7 +392,8 @@
           <button class="filter-btn active" onclick="setStyle(this, 'cyberpunk')">Cyberpunk Neon</button>
           <button class="filter-btn" onclick="setStyle(this, 'cartoon')">Cartoonish</button>
           <button class="filter-btn" onclick="setStyle(this, 'retro')">Retro Pop Art</button>
-          <button class="filter-btn" onclick="setStyle(this, 'animalHuman')">Animals Doing Human Things</button>
+          <button class="filter-btn" onclick="setStyle(this, 'memphis')">Memphis Design</button>
+          <button class="filter-btn" onclick="setStyle(this, 'random')">Random Style</button>
           <button class="filter-btn" onclick="setStyle(this, 'custom')">Custom</button>
         </div>
 
@@ -575,6 +581,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-edit" onclick="viewFullPostFromCalendar()" style="margin-right:auto;">View Full Post</button>
+        <button class="btn btn-reject" onclick="unscheduleFromCalendar()" style="background:#ef4444;">Unschedule</button>
         <button class="btn btn-cancel" onclick="closeRescheduleModal()">Cancel</button>
         <button class="btn btn-publish" onclick="submitReschedule()">Update Schedule</button>
       </div>
@@ -613,6 +620,91 @@
     let blogFilter = 'all';
     let editingId = null;
     let blogEditingId = null;
+    let pollingInterval = null;
+
+    // ─── Auto-refresh for generating posts ──────────────
+    function startPolling() {
+      if (pollingInterval) return; // Already polling
+      pollingInterval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/posts');
+          const freshPosts = await res.json();
+
+          // Check if any posts have completed generation
+          const hadGenerating = posts.some(p => p.status === 'generating');
+          const hasGenerating = freshPosts.some(p => p.status === 'generating');
+
+          // Update posts
+          posts = freshPosts;
+          render();
+
+          // Stop polling if no more generating posts
+          if (!hasGenerating && pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+        } catch (e) {
+          console.error('Polling error:', e);
+        }
+      }, 3000); // Poll every 3 seconds
+    }
+
+    // ─── Schedule Helper ─────────────────────────────────
+    function getNextPostDay() {
+      const now = new Date();
+      const postDays = [1, 3, 5]; // Monday, Wednesday, Friday
+
+      // Get all scheduled dates at 8:00 AM (normalized to same format)
+      const scheduledDates = new Set();
+      posts.forEach(p => {
+        if (p.scheduledFor) {
+          const d = new Date(p.scheduledFor);
+          // Normalize to just the date at 8:00 AM for comparison
+          const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T08:00`;
+          scheduledDates.add(dateKey);
+        }
+      });
+
+      // Find next available post day
+      let checkDate = new Date(now);
+      checkDate.setHours(8, 0, 0, 0);
+
+      // Start checking from today if it's a post day and before 8 AM
+      // Otherwise start from tomorrow
+      if (!(postDays.includes(now.getDay()) && now.getHours() < 8)) {
+        checkDate.setDate(checkDate.getDate() + 1);
+      }
+
+      // Check up to 30 days ahead to find an open slot
+      for (let i = 0; i < 30; i++) {
+        const dayOfWeek = checkDate.getDay();
+
+        // If it's a posting day (Mon/Wed/Fri)
+        if (postDays.includes(dayOfWeek)) {
+          const dateKey = formatDatetimeLocal(checkDate);
+
+          // Check if this date is available
+          if (!scheduledDates.has(dateKey)) {
+            return dateKey;
+          }
+        }
+
+        // Move to next day
+        checkDate.setDate(checkDate.getDate() + 1);
+      }
+
+      // Fallback: return next post day even if taken (shouldn't happen with 30 day window)
+      return formatDatetimeLocal(checkDate);
+    }
+
+    function formatDatetimeLocal(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
 
     // ─── Tab Switching ───────────────────────────────────
     function switchTab(tab) {
@@ -670,7 +762,7 @@
     function render() {
       const filtered = posts.filter(p => {
         if (activeFilter === 'all') return p.status !== 'rejected';
-        if (['pending','approved','rejected','published'].includes(activeFilter)) return p.status === activeFilter;
+        if (['idea','pending','approved','rejected','published'].includes(activeFilter)) return p.status === activeFilter;
         return p.pillar === activeFilter && p.status !== 'rejected';
       });
 
@@ -734,9 +826,15 @@
           ` : ''}
 
           <div class="card-body">
-            ${editingId === p.id
-              ? `<textarea class="edit-copy" id="edit-${p.id}">${escapeHtml(p.copy)}</textarea>`
-              : `<div class="post-copy">${escapeHtml(p.copy)}</div>`
+            ${p.status === 'idea'
+              ? `<div style="padding:16px; background:#1a0a1f; border:2px solid #4c1d95; border-radius:8px; margin-bottom:12px;">
+                   <div style="font-size:11px; color:#a855f7; font-weight:600; text-transform:uppercase; margin-bottom:8px;">💡 Post Idea</div>
+                   <div style="font-size:15px; color:#e0d0ff; line-height:1.6; font-style:italic;">"${escapeHtml(p.idea)}"</div>
+                   <div style="font-size:11px; color:#888; margin-top:12px;">Approve this idea to generate the full caption</div>
+                 </div>`
+              : editingId === p.id
+                ? `<textarea class="edit-copy" id="edit-${p.id}">${escapeHtml(p.copy)}</textarea>`
+                : `<div class="post-copy">${escapeHtml(p.copy)}</div>`
             }
           </div>
           `}
@@ -744,12 +842,13 @@
           ${!p.generating && p.status !== 'published' ? `
           <div style="padding:8px 18px; border-top:1px solid #1a1a2a; display:flex; align-items:center; gap:8px;">
             <span style="font-size:12px; color:#666;">Schedule:</span>
-            <input type="datetime-local" value="${p.scheduledFor || ''}" onchange="setSchedule(${p.id}, this.value)" style="background:#0a0a15; border:1px solid #2a2a3a; border-radius:6px; color:#d0d0d0; padding:4px 8px; font-size:12px; font-family:inherit;" />
+            <input type="datetime-local" id="schedule-${p.id}" value="${p.scheduledFor || getNextPostDay()}" ${p.scheduledFor ? `onchange="setSchedule(${p.id}, this.value)"` : ''} style="background:#0a0a15; border:1px solid #2a2a3a; border-radius:6px; color:#d0d0d0; padding:4px 8px; font-size:12px; font-family:inherit;" />
             ${p.scheduledFor ? `<button onclick="setSchedule(${p.id}, '')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:16px;">&times;</button>` : ''}
           </div>
           ` : `
-          <div style="padding:8px 18px; border-top:1px solid #1a1a2a; display:flex; align-items:center; gap:8px;">
+          <div style="padding:8px 18px; border-top:1px solid #1a1a2a; display:flex; align-items:center; gap:8px; justify-content:space-between;">
             <span style="font-size:12px; color:#a855f7;">${p.scheduledFor ? new Date(p.scheduledFor).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) : 'Published'}</span>
+            ${p.scheduledFor ? `<button class="btn" onclick="setSchedule(${p.id}, '')" style="background:#ef4444; color:#fff; padding:4px 10px; font-size:11px;">Cancel</button>` : ''}
           </div>
           `}
 
@@ -788,22 +887,29 @@
                 <button class="btn btn-save" onclick="saveEdit(${p.id})">Save</button>
                 <button class="btn btn-cancel" onclick="cancelEdit()">Cancel</button>
               ` : `
-                ${p.status !== 'published' && p.status !== 'approved' ? `
+                ${p.status === 'idea' ? `
+                  <button class="btn btn-approve" onclick="approveIdea(${p.id})" style="flex:1;">✓ Approve Idea</button>
+                  <button class="btn btn-reject" onclick="openRejectModal(${p.id})">✕ Reject</button>
+                ` : ''}
+                ${p.status !== 'published' && p.status !== 'approved' && p.status !== 'scheduled' && p.status !== 'idea' ? `
                   <button class="btn btn-edit" onclick="startEdit(${p.id})">Edit</button>
+                  ${p.imageUrl ? `<button class="btn" onclick="regenerateCaption(${p.id})" style="background:#7c3aed; color:#fff;">🔄 Regenerate Caption</button>` : ''}
                   <button class="btn btn-approve" onclick="setStatus(${p.id}, 'approved')">Approve</button>
                   <button class="btn btn-reject" onclick="openRejectModal(${p.id})">Reject</button>
                 ` : ''}
-                ${p.status === 'approved' && p.scheduledFor ? `
+                ${p.status === 'scheduled' ? `
                   <button class="btn btn-edit" onclick="startEdit(${p.id})">Edit</button>
+                  ${p.imageUrl ? `<button class="btn" onclick="regenerateCaption(${p.id})" style="background:#7c3aed; color:#fff;">🔄 Regenerate Caption</button>` : ''}
                   <button class="btn btn-reject" onclick="openRejectModal(${p.id})">Reject</button>
                   <div style="flex:1;"></div>
-                  <button class="btn btn-publish" onclick="publishPost(${p.id})">Schedule</button>
+                  <button class="btn" onclick="setSchedule(${p.id}, '')" style="background:#ef4444; color:#fff;">Cancel Schedule</button>
                 ` : ''}
-                ${p.status === 'approved' && !p.scheduledFor ? `
+                ${p.status === 'approved' ? `
                   <button class="btn btn-edit" onclick="startEdit(${p.id})">Edit</button>
+                  ${p.imageUrl ? `<button class="btn" onclick="regenerateCaption(${p.id})" style="background:#7c3aed; color:#fff;">🔄 Regenerate Caption</button>` : ''}
                   <button class="btn btn-reject" onclick="openRejectModal(${p.id})">Reject</button>
                   <div style="flex:1;"></div>
-                  <span style="font-size:11px; color:#555;">Set date to publish</span>
+                  <button class="btn btn-publish" onclick="quickSchedule(${p.id})">Schedule</button>
                 ` : ''}
                 ${p.status === 'rejected' ? `
                   <button class="btn btn-reset" onclick="setStatus(${p.id}, 'pending')">Reset</button>
@@ -870,7 +976,7 @@
           ${!p.generating && p.status !== 'published' ? `
           <div style="padding:8px 18px; border-top:1px solid #1a1a2a; display:flex; align-items:center; gap:8px;">
             <span style="font-size:12px; color:#666;">Schedule:</span>
-            <input type="datetime-local" value="${p.scheduledFor || ''}" onchange="setBlogSchedule(${p.id}, this.value)" style="background:#0a0a15; border:1px solid #2a2a3a; border-radius:6px; color:#d0d0d0; padding:4px 8px; font-size:12px; font-family:inherit;" />
+            <input type="datetime-local" id="blog-schedule-${p.id}" value="${p.scheduledFor || getNextPostDay()}" ${p.scheduledFor ? `onchange="setBlogSchedule(${p.id}, this.value)"` : ''} style="background:#0a0a15; border:1px solid #2a2a3a; border-radius:6px; color:#d0d0d0; padding:4px 8px; font-family:inherit;" />
             ${p.scheduledFor ? `<button onclick="setBlogSchedule(${p.id}, '')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:16px;">&times;</button>` : ''}
           </div>
           ` : !p.generating && p.status === 'published' ? `
@@ -967,14 +1073,34 @@
 
     async function setSchedule(id, value) {
       const scheduledFor = value || null;
+      const updateData = { scheduledFor };
+
+      // Update status based on schedule
+      if (scheduledFor) {
+        updateData.status = 'scheduled';
+      } else {
+        updateData.status = 'pending';
+      }
+
       await fetch(`/api/posts/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduledFor })
+        body: JSON.stringify(updateData)
       });
-      posts.find(p => p.id === id).scheduledFor = scheduledFor;
+
+      const post = posts.find(p => p.id === id);
+      post.scheduledFor = scheduledFor;
+      post.status = scheduledFor ? 'scheduled' : 'pending';
+
       render();
-      showToast(scheduledFor ? `Post #${id} scheduled` : `Post #${id} schedule cleared`);
+      showToast(scheduledFor ? `Post #${id} scheduled` : `Post #${id} unscheduled and returned to pending`);
+    }
+
+    async function quickSchedule(id) {
+      // Get the date from the input field
+      const input = document.getElementById(`schedule-${id}`);
+      const selectedDate = input ? input.value : getNextPostDay();
+      await setSchedule(id, selectedDate);
     }
 
     function startEdit(id) {
@@ -1025,14 +1151,27 @@
 
     async function setBlogSchedule(id, value) {
       const scheduledFor = value || null;
+      const updateData = { scheduledFor };
+
+      // Update status based on schedule
+      if (scheduledFor) {
+        updateData.status = 'scheduled';
+      } else {
+        updateData.status = 'pending';
+      }
+
       await fetch(`/api/blog-posts/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scheduledFor })
+        body: JSON.stringify(updateData)
       });
-      blogPosts.find(p => p.id === id).scheduledFor = scheduledFor;
+
+      const post = blogPosts.find(p => p.id === id);
+      post.scheduledFor = scheduledFor;
+      post.status = scheduledFor ? 'scheduled' : 'pending';
+
       renderBlog();
-      showToast(scheduledFor ? `Blog #${id} scheduled` : `Blog #${id} schedule cleared`);
+      showToast(scheduledFor ? `Blog #${id} scheduled` : `Blog #${id} unscheduled and returned to pending`);
     }
 
     function startBlogEdit(id) {
@@ -1192,10 +1331,10 @@
     let currentStyle = 'cyberpunk';
 
     const stylePresets = {
-      cyberpunk: "Stylized digital illustration, vibrant neon colors, futuristic cyberpunk aesthetic mixed with warm fun energy",
-      cartoon: "Bold cartoonish illustration, thick outlines, bright saturated colors, exaggerated proportions, playful comic book style",
-      retro: "Retro pop art style, bold primary colors, halftone dots, vintage poster aesthetic, Warhol-inspired",
-      animalHuman: "Photorealistic animals doing human activities, dressed in human clothing, natural lighting, highly detailed fur and textures, whimsical and charming",
+      cyberpunk: "Dark cyberpunk digital art, harsh electric neon against black, heavy glitch distortion, brutalist futuristic edge, underground hacker aesthetic, dystopian rebellion",
+      cartoon: "Bold underground comic style, thick ink outlines, punchy saturated colors, exaggerated features, street art energy, rebellious and fun",
+      retro: "Bold 60s-70s pop art, vivid primary colors, halftone dots, Roy Lichtenstein meets Warhol, graphic poster art, countercultural punch",
+      memphis: "Bold Memphis Milano style, geometric shapes, bright clashing colors, 80s postmodern graphics, playful asymmetry, maximum visual impact",
       custom: ""
     };
 
@@ -1226,7 +1365,14 @@
     }
 
     function setStyle(btn, style) {
-      currentStyle = style;
+      // Handle random style selection
+      let actualStyle = style;
+      if (style === 'random') {
+        const availableStyles = ['cyberpunk', 'cartoon', 'retro', 'memphis'];
+        actualStyle = availableStyles[Math.floor(Math.random() * availableStyles.length)];
+      }
+
+      currentStyle = actualStyle;
       btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
@@ -1236,7 +1382,7 @@
         if (style === 'custom') {
           document.getElementById('modal-prompt').value = `Scene: ${scene}. No text, no words, no letters, no writing.`;
         } else {
-          document.getElementById('modal-prompt').value = `${stylePresets[style]}. Scene: ${scene}. Context: music lesson studio for kids and teens. No text, no words, no letters, no writing, no watermarks.`;
+          document.getElementById('modal-prompt').value = `${stylePresets[actualStyle]}. Scene: ${scene}. Context: music lesson studio for kids and teens. No text, no words, no letters, no writing, no watermarks.`;
         }
         document.getElementById('modal-prompt').focus();
       }
@@ -1308,6 +1454,44 @@
       posts.find(p => p.id === id).imageUrl = null;
       render();
       showToast(`Photo removed from Post #${id}`);
+    }
+
+    // Simple upload photo and get caption workflow
+    function uploadPhotoForCaption() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        document.getElementById('bulk-status').textContent = 'Uploading photo and generating caption...';
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+          const res = await fetch('/api/posts/upload-photo-caption', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await res.json();
+
+          if (data.error) {
+            showToast(`Error: ${data.error}`, true);
+          } else {
+            // Add new post to the top
+            posts.unshift(data);
+            render();
+            showToast('Photo uploaded with caption! Review and approve.');
+          }
+        } catch (e) {
+          showToast('Failed to upload photo', true);
+        }
+
+        document.getElementById('bulk-status').textContent = '';
+      };
+      input.click();
     }
 
     // ─── Image Filters ─────────────────────────────────────
@@ -1482,10 +1666,10 @@
       const formData = new FormData();
       formData.append('image', file);
 
-      document.getElementById('bulk-status').textContent = 'Uploading photo and generating caption...';
+      document.getElementById('bulk-status').textContent = 'Uploading photo and generating idea...';
 
       try {
-        const res = await fetch('/api/posts/generate-from-image', {
+        const res = await fetch('/api/posts/generate-idea-from-image', {
           method: 'POST',
           body: formData
         });
@@ -1494,17 +1678,131 @@
         if (data.error) {
           showToast(`Error: ${data.error}`, true);
         } else {
-          // Add new post to the beginning of the list
+          // Add new idea post to the beginning of the list
           posts.unshift(data);
           render();
-          showToast(`New post created with AI caption!`);
+          showToast(`Post idea generated! Review and approve.`);
         }
       } catch (e) {
-        showToast('Failed to generate caption', true);
+        showToast('Failed to generate idea', true);
       }
 
       document.getElementById('bulk-status').textContent = '';
       input.value = ''; // Reset input
+    }
+
+    // Regenerate caption for post with photo
+    async function regenerateCaption(id) {
+      const post = posts.find(p => p.id === id);
+      if (!post || !post.imageUrl) return;
+
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        const actionsDiv = card.querySelector('.card-actions');
+        if (actionsDiv) {
+          const originalHTML = actionsDiv.innerHTML;
+          actionsDiv.innerHTML = '<div style="text-align:center; padding:8px; color:#7c3aed; font-size:13px;">Regenerating caption...</div>';
+
+          setTimeout(() => {
+            if (actionsDiv.innerHTML.includes('Regenerating')) {
+              actionsDiv.innerHTML = originalHTML;
+            }
+          }, 10000); // Reset after 10s if stuck
+        }
+      }
+
+      try {
+        const res = await fetch(`/api/posts/${id}/regenerate-caption`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const updatedPost = await res.json();
+
+        if (updatedPost.error) {
+          showToast(`Error: ${updatedPost.error}`, true);
+        } else {
+          Object.assign(post, updatedPost);
+          render();
+          showToast(`New caption generated for post #${id}!`);
+        }
+      } catch (e) {
+        showToast('Failed to regenerate caption', true);
+        render();
+      }
+    }
+
+    // Make regenerateCaption globally accessible
+    window.regenerateCaption = regenerateCaption;
+
+    // Generate text-based idea (no photo)
+    async function generateTextIdea() {
+      const input = document.getElementById('idea-topic-input');
+      const topic = input.value.trim() || null;
+
+      document.getElementById('bulk-status').textContent = 'Generating post idea...';
+
+      try {
+        const res = await fetch('/api/posts/generate-idea', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          showToast(`Error: ${data.error}`, true);
+        } else {
+          posts.unshift(data);
+          render();
+          showToast(`Post idea generated! Review and approve.`);
+          input.value = ''; // Clear input after successful generation
+        }
+      } catch (e) {
+        showToast('Failed to generate idea', true);
+      }
+
+      document.getElementById('bulk-status').textContent = '';
+    }
+
+    // Approve idea and generate full post (Stage 2)
+    async function approveIdea(id) {
+      const post = posts.find(p => p.id === id);
+      if (!post || post.status !== 'idea') return;
+
+      // Add generating class to card for visual feedback
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        card.classList.add('generating');
+        const actionsDiv = card.querySelector('.card-actions');
+        if (actionsDiv) {
+          actionsDiv.innerHTML = '<div style="text-align:center; padding:8px; color:#a855f7; font-size:13px;">Generating full caption...</div>';
+        }
+      }
+
+      // Start background polling to check for completion
+      startPolling();
+
+      // Trigger generation (don't await - let it happen in background)
+      fetch(`/api/posts/${id}/generate-full-post`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }).then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            showToast(`Error: ${data.error}`, true);
+            if (card) card.classList.remove('generating');
+            render();
+          }
+          // Success case handled by polling
+        })
+        .catch(e => {
+          console.error('Generation error:', e);
+          showToast(`Error generating post #${id}`, true);
+          if (card) card.classList.remove('generating');
+          render();
+        });
+
+      showToast(`Generating post #${id}... You can leave and come back!`);
     }
 
     // ─── View Blog Modal ─────────────────────────────────
@@ -1647,28 +1945,46 @@
     let isEditingRejection = false;
 
     function openRejectModal(id, isEdit = false) {
+      console.log('openRejectModal called with id:', id, 'isEdit:', isEdit);
       currentRejectId = id;
       isEditingRejection = isEdit;
+
+      const modal = document.getElementById('rejectModal');
+      const categorySelect = document.getElementById('rejectCategory');
+      const detailsTextarea = document.getElementById('rejectDetails');
+      const notesTextarea = document.getElementById('rejectNotes');
+
+      if (!modal || !categorySelect || !detailsTextarea || !notesTextarea) {
+        console.error('Modal elements not found!');
+        alert('Error: Modal elements not found. Please refresh the page.');
+        return;
+      }
 
       if (isEdit) {
         // Pre-fill with existing feedback
         const post = posts.find(p => p.id === id);
         if (post && post.rejectionFeedback) {
-          document.getElementById('rejectCategory').value = post.rejectionFeedback.category;
-          document.getElementById('rejectDetails').value = post.rejectionFeedback.details;
-          document.getElementById('rejectNotes').value = post.rejectionFeedback.notes || '';
-          document.querySelector('#rejectModal .modal-header h2').textContent = 'Edit Rejection Feedback';
-          document.querySelector('#rejectModal .btn-reject').textContent = 'Update Feedback';
+          categorySelect.value = post.rejectionFeedback.category;
+          detailsTextarea.value = post.rejectionFeedback.details;
+          notesTextarea.value = post.rejectionFeedback.notes || '';
+          const header = document.querySelector('#rejectModal .modal-header h2');
+          const btn = document.querySelector('#rejectModal .btn-reject');
+          if (header) header.textContent = 'Edit Rejection Feedback';
+          if (btn) btn.textContent = 'Update Feedback';
         }
       } else {
-        document.getElementById('rejectCategory').value = '';
-        document.getElementById('rejectDetails').value = '';
-        document.getElementById('rejectNotes').value = '';
-        document.querySelector('#rejectModal .modal-header h2').textContent = 'Why are you rejecting this post?';
-        document.querySelector('#rejectModal .btn-reject').textContent = 'Reject & Save Feedback';
+        categorySelect.value = '';
+        detailsTextarea.value = '';
+        notesTextarea.value = '';
+        const header = document.querySelector('#rejectModal .modal-header h2');
+        const btn = document.querySelector('#rejectModal .btn-reject');
+        if (header) header.textContent = 'Why are you rejecting this post?';
+        if (btn) btn.textContent = 'Reject & Save Feedback';
       }
 
-      document.getElementById('rejectModal').classList.add('show');
+      console.log('Adding show class to modal');
+      modal.classList.add('show');
+      console.log('Modal should now be visible');
     }
 
     function editRejectionFeedback(id) {
@@ -1934,11 +2250,11 @@
 
       // Get all scheduled posts (social and blog)
       const scheduledPosts = [
-        ...posts.filter(p => p.scheduledFor && (p.status === 'approved' || p.status === 'published')).map(p => ({
+        ...posts.filter(p => p.scheduledFor && (p.status === 'scheduled' || p.status === 'published')).map(p => ({
           ...p,
           type: 'social'
         })),
-        ...blogPosts.filter(p => p.scheduledFor && (p.status === 'approved' || p.status === 'published')).map(p => ({
+        ...blogPosts.filter(p => p.scheduledFor && (p.status === 'scheduled' || p.status === 'published')).map(p => ({
           ...p,
           type: 'blog'
         }))
@@ -1970,7 +2286,11 @@
         const dayPosts = postsByDate[dateKey] || [];
 
         calendarHTML += `
-          <div class="calendar-day ${isToday ? 'today' : ''}">
+          <div
+            class="calendar-day ${isToday ? 'today' : ''}"
+            ondragover="handleCalendarDragOver(event)"
+            ondragleave="event.currentTarget.style.background = ''"
+            ondrop="handleCalendarDrop(event, '${dateKey}')">
             <div class="calendar-day-number">${day}</div>
             ${dayPosts.map(post => {
               const time = new Date(post.scheduledFor).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
@@ -1983,7 +2303,13 @@
                 : post.title.slice(0, 40);
 
               return `
-                <div class="calendar-post ${post.status}" style="border-left-color:${borderColor};" onclick="viewCalendarPost('${post.type}', ${post.id})">
+                <div
+                  class="calendar-post ${post.status}"
+                  style="border-left-color:${borderColor}; cursor:grab;"
+                  draggable="true"
+                  ondragstart="handleCalendarDragStart(event, '${post.type}', ${post.id}, '${post.scheduledFor}')"
+                  ondragend="handleCalendarDragEnd(event)"
+                  onclick="event.stopPropagation(); viewCalendarPost('${post.type}', ${post.id})">
                   <div class="calendar-post-type">${post.type === 'social' ? 'Social' : 'Blog'}</div>
                   <div class="calendar-post-title">${escapeHtml(title)}</div>
                   <div class="calendar-post-time">${time}</div>
@@ -2002,6 +2328,77 @@
       }
 
       document.getElementById('calendar-grid').innerHTML = calendarHTML;
+    }
+
+    // Calendar drag-and-drop
+    let draggedPost = null;
+
+    function handleCalendarDragStart(event, type, id, scheduledFor) {
+      draggedPost = { type, id, scheduledFor };
+      event.dataTransfer.effectAllowed = 'move';
+      event.target.style.opacity = '0.5';
+    }
+
+    function handleCalendarDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      event.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+    }
+
+    function handleCalendarDragEnd(event) {
+      event.target.style.opacity = '1';
+      // Reset all day backgrounds
+      document.querySelectorAll('.calendar-day').forEach(day => {
+        day.style.background = '';
+      });
+    }
+
+    async function handleCalendarDrop(event, newDateKey) {
+      event.preventDefault();
+      event.currentTarget.style.background = '';
+
+      if (!draggedPost) return;
+
+      // Parse the new date (YYYY-MM-DD)
+      const [year, month, day] = newDateKey.split('-');
+
+      // Get the time from the original schedule
+      const originalDate = new Date(draggedPost.scheduledFor);
+      const hours = originalDate.getHours();
+      const minutes = originalDate.getMinutes();
+
+      // Create new datetime with new date but same time
+      const newDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), hours, minutes);
+      const newDatetime = formatDatetimeLocal(newDate);
+
+      // Update the post
+      try {
+        const endpoint = draggedPost.type === 'social'
+          ? `/api/posts/${draggedPost.id}`
+          : `/api/blog-posts/${draggedPost.id}`;
+
+        await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scheduledFor: newDatetime })
+        });
+
+        // Update local state
+        if (draggedPost.type === 'social') {
+          const post = posts.find(p => p.id === draggedPost.id);
+          if (post) post.scheduledFor = newDatetime;
+        } else {
+          const post = blogPosts.find(p => p.id === draggedPost.id);
+          if (post) post.scheduledFor = newDatetime;
+        }
+
+        renderCalendar();
+        showToast('Post rescheduled successfully!');
+      } catch (e) {
+        showToast('Failed to reschedule post', true);
+      }
+
+      draggedPost = null;
     }
 
     let reschedulePostType = null;
@@ -2093,6 +2490,48 @@
         showToast(`Post rescheduled successfully!`);
       } catch (e) {
         showToast('Failed to reschedule post', true);
+      }
+    }
+
+    async function unscheduleFromCalendar() {
+      if (!confirm('Remove this post from the schedule? It will return to pending status for review.')) {
+        return;
+      }
+
+      try {
+        const endpoint = reschedulePostType === 'social'
+          ? `/api/posts/${reschedulePostId}`
+          : `/api/blog-posts/${reschedulePostId}`;
+
+        const res = await fetch(endpoint, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scheduledFor: null, status: 'pending' })
+        });
+
+        const updatedPost = await res.json();
+
+        // Update local state - clear schedule and reset to pending
+        if (reschedulePostType === 'social') {
+          const post = posts.find(p => p.id === reschedulePostId);
+          if (post) {
+            post.scheduledFor = null;
+            post.status = 'pending';
+          }
+        } else {
+          const post = blogPosts.find(p => p.id === reschedulePostId);
+          if (post) {
+            post.scheduledFor = null;
+            post.status = 'pending';
+          }
+        }
+
+        closeRescheduleModal();
+        renderCalendar();
+        render(); // Update main view too
+        showToast(`Post unscheduled and returned to pending!`);
+      } catch (e) {
+        showToast('Failed to unschedule post', true);
       }
     }
 
@@ -2196,8 +2635,12 @@
         }
 
         const grid = document.getElementById('drive-grid');
+        // Check which files have already been used
+        const usedFileIds = new Set(posts.filter(p => p.driveFileId).map(p => p.driveFileId));
+
         grid.innerHTML = data.files.map(file => {
           const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+          const isUsed = usedFileIds.has(file.id);
           // Use our proxy endpoint for thumbnails
           const thumb = isFolder ? '' : `/api/google-drive/thumbnail/${file.id}`;
 
@@ -2208,6 +2651,7 @@
                 : `<img src="${thumb}" alt="${file.name}" style="width:100%; height:100%; object-fit:cover;" />`
               }
               <div class="file-name">${file.name}</div>
+              ${isUsed ? '<span style="position:absolute; top:4px; right:4px; background:#10b981; color:white; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:600;">Used</span>' : ''}
             </div>
           `;
         }).join('');
@@ -2224,55 +2668,29 @@
       closeGoogleDriveModal();
 
       if (driveCaptionMode) {
-        // Generate caption mode - create placeholder first
-        const tempId = 'temp-' + Date.now();
-        const tempPost = {
-          id: tempId,
-          pillar: 'Student Highlight',
-          platform: 'Both',
-          format: 'Photo caption',
-          copy: '',
-          imageNote: '',
-          status: 'pending',
-          imageUrl: null,
-          scheduledFor: null,
-          generating: true,
-          fileName: fileName
-        };
-
-        posts.unshift(tempPost);
-        render();
-        showToast('Importing photo and generating caption...');
+        // Simple caption mode - just get photo and caption
+        document.getElementById('bulk-status').textContent = 'Importing photo and generating caption...';
 
         try {
-          const res = await fetch('/api/google-drive/generate-caption', {
+          const res = await fetch('/api/google-drive/photo-caption', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileId, fileName })
           });
           const data = await res.json();
 
-          // Remove temporary post
-          const tempIdx = posts.findIndex(p => p.id === tempId);
-          if (tempIdx !== -1) posts.splice(tempIdx, 1);
-
           if (data.error) {
-            console.error('Caption generation error:', data.error);
-            render();
             showToast(`Error: ${data.error}`, true);
           } else {
             posts.unshift(data);
             render();
-            showToast(`New post created with AI caption!`);
+            showToast('Photo imported with caption! Review and approve.');
           }
         } catch (e) {
-          console.error('Caption generation exception:', e);
-          // Remove temporary post on error
-          const tempIdx = posts.findIndex(p => p.id === tempId);
-          if (tempIdx !== -1) posts.splice(tempIdx, 1);
-          render();
-          showToast(`Caption generation failed: ${e.message}`, true);
+          showToast('Failed to import photo', true);
         }
+
+        document.getElementById('bulk-status').textContent = '';
       } else {
         // Attach to existing post mode
         if (!drivePostId) return;

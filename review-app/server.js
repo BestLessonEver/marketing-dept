@@ -82,14 +82,15 @@ async function processImage(buffer, fileName, filterName = 'none') {
     }
   }
 
-  // Create sharp instance with resize
+  // Create sharp instance with auto-rotation and resize
   let image = sharp(buffer)
+    .rotate() // Auto-rotates based on EXIF orientation
     .resize(2000, 2000, { fit: 'inside', withoutEnlargement: true });
 
   // Apply filter
   image = await applyFilter(image, filterName);
 
-  // Convert to JPEG
+  // Convert to JPEG (strips EXIF after rotation is applied)
   return await image.jpeg({ quality: 85 }).toBuffer();
 }
 
@@ -145,11 +146,15 @@ const DEFAULT_PROMPTS = {
   socialCaption: `You are a social media caption writer for Best Lesson Ever, a music lesson studio in Friendswood, TX. Your voice is irreverent, witty, fun, and encouraging — like a cool music teacher with great Twitter game.
 
 RULES:
-- Write ONE sentence only
+- Write 3-4 sentences (concise but engaging)
 - Make it fun, funny, kind, or encouraging
-- Keep it short and punchy
-- No corporate speak or cliches
-- No hashtags
+- Irreverent and witty (meme energy, internet-savvy)
+- Fun first - don't take ourselves too seriously
+- Encouraging - supportive without being cheesy
+- Educational - real value, not fluff
+- NO corporate speak, NO clichés ("music builds discipline", "unlock potential")
+- NO hard sales, soft CTA only
+- NO hashtags
 - Relate it to music lessons, students, or the studio if possible`,
 
   blogGeneration: `You are an SEO blog writer for Best Lesson Ever, a music lesson studio in Friendswood, TX (Houston metro). You write with an irreverent, witty, internet-savvy voice — think cool music teacher energy with great Twitter game. Be excited and fun, not negative or preachy.
@@ -209,6 +214,105 @@ function writePrompts(prompts) {
   fs.writeFileSync(PROMPTS_FILE, JSON.stringify(prompts, null, 2));
 }
 
+// Generate text-based post idea (no photo required)
+app.post("/api/posts/generate-idea", async (req, res) => {
+  const { topic } = req.body;
+
+  try {
+    const posts = readPosts();
+    const nextId = posts.length ? Math.max(...posts.map((p) => p.id)) + 1 : 1;
+
+    // Get recent rejections for learning
+    const recentRejections = getRecentRejections();
+    const avoidanceExamples = recentRejections
+      .map(r => `AVOID THIS: "${r.copy}" (Reason: ${r.details})`)
+      .join('\n');
+
+    const systemPrompt = `You are a social media strategist for Best Lesson Ever, a music lesson studio.
+
+Generate a SHORT POST IDEA (not the full caption) for social media.
+
+${topic ? `Topic: ${topic}` : 'Generate a creative post idea related to music lessons, students, teachers, practice, performances, or studio life.'}
+
+Return ONLY a 1-2 sentence concept/hook that describes what the post should be about.
+Examples:
+- "Student showing off their progress after just 3 months of lessons"
+- "Teacher and student both cracking up during a fun lesson moment"
+- "The face you make when you finally nail that tricky chord"
+- "Behind the scenes at our latest recital prep week"
+
+${avoidanceExamples ? `LEARN FROM THESE REJECTIONS:\n${avoidanceExamples}\n\n` : ''}
+
+Be specific and engaging. Focus on the hook/angle, not the full caption.`;
+
+    const apiData = JSON.stringify({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 150,
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: "Generate a creative post idea."
+      }]
+    });
+
+    const options = {
+      hostname: "api.anthropic.com",
+      path: "/v1/messages",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Length": Buffer.byteLength(apiData),
+      },
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+      let apiBody = "";
+      apiRes.on("data", (chunk) => (apiBody += chunk));
+      apiRes.on("end", () => {
+        try {
+          const result = JSON.parse(apiBody);
+          if (result.error) {
+            return res.status(500).json({ error: result.error.message || "Claude API error" });
+          }
+
+          const idea = result.content && result.content[0] && result.content[0].text;
+          if (!idea) {
+            return res.status(500).json({ error: "No idea generated" });
+          }
+
+          // Create new post with IDEA status, no image
+          const newPost = {
+            id: nextId,
+            pillar: "Student Highlight",
+            platform: "Both",
+            format: "Photo caption",
+            idea: idea.trim(),
+            copy: null,
+            imageNote: null,
+            status: "idea",
+            imageUrl: null,
+            scheduledFor: null
+          };
+
+          posts.push(newPost);
+          writePosts(posts);
+          res.json(newPost);
+        } catch (e) {
+          res.status(500).json({ error: "Failed to parse Claude response: " + e.message });
+        }
+      });
+    });
+
+    apiReq.on("error", (e) => res.status(500).json({ error: e.message }));
+    apiReq.write(apiData);
+    apiReq.end();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET all posts
 app.get("/api/posts", (req, res) => {
   res.json(readPosts());
@@ -230,6 +334,148 @@ app.put("/api/prompts", (req, res) => {
 app.post("/api/prompts/reset", (req, res) => {
   writePrompts(DEFAULT_PROMPTS);
   res.json({ success: true, prompts: DEFAULT_PROMPTS });
+});
+
+// Generate post idea from image (Stage 1)
+app.post("/api/posts/generate-idea-from-image", (req, res) => {
+  const chunks = [];
+  req.on("data", (chunk) => chunks.push(chunk));
+  req.on("end", async () => {
+    try {
+      const body = Buffer.concat(chunks);
+      const contentType = req.headers["content-type"] || "";
+      const boundaryMatch = contentType.match(/boundary=(.+)/);
+      if (!boundaryMatch) {
+        return res.status(400).json({ error: "No boundary found" });
+      }
+
+      const boundary = boundaryMatch[1];
+      const bodyStr = body.toString("latin1");
+      const parts = bodyStr.split("--" + boundary);
+
+      for (const part of parts) {
+        if (part.includes("filename=")) {
+          const headerEnd = part.indexOf("\r\n\r\n");
+          if (headerEnd === -1) continue;
+
+          const fileData = part.slice(headerEnd + 4);
+          const trimmed = fileData.replace(/\r\n$/, "");
+
+          // Save image
+          const posts = readPosts();
+          const nextId = posts.length ? Math.max(...posts.map((p) => p.id)) + 1 : 1;
+          const imgDir = path.join(__dirname, "public", "images");
+          if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+
+          const ext = part.includes("image/png") ? "png" : "jpg";
+          const imgPath = `/images/post-${nextId}.${ext}`;
+          const fullPath = path.join(__dirname, "public", imgPath);
+          fs.writeFileSync(fullPath, Buffer.from(trimmed, "latin1"));
+
+          // Convert image to base64 for Claude
+          const imageBuffer = fs.readFileSync(fullPath);
+          const base64Image = imageBuffer.toString("base64");
+          const mediaType = ext === "png" ? "image/png" : "image/jpeg";
+
+          // Call Claude API to analyze image and generate IDEA only
+          const systemPrompt = `You are a social media strategist for Best Lesson Ever, a music lesson studio.
+
+Analyze this photo and generate a SHORT POST IDEA (not the full caption).
+
+Return ONLY a 1-2 sentence concept/hook that describes what the post should be about.
+Examples:
+- "Student showing off their progress after just 3 months of lessons"
+- "Teacher and student both cracking up during a fun lesson moment"
+- "The face you make when you finally nail that tricky chord"
+
+Be specific to what you see in the image. Focus on the hook/angle, not the full caption.`;
+
+          const userPrompt = "What's the post idea for this image?";
+
+          const apiData = JSON.stringify({
+            model: "claude-sonnet-4-5-20250929",
+            max_tokens: 150,
+            system: systemPrompt,
+            messages: [{
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: mediaType,
+                    data: base64Image
+                  }
+                },
+                {
+                  type: "text",
+                  text: userPrompt
+                }
+              ]
+            }]
+          });
+
+          const options = {
+            hostname: "api.anthropic.com",
+            path: "/v1/messages",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": ANTHROPIC_KEY,
+              "anthropic-version": "2023-06-01",
+              "Content-Length": Buffer.byteLength(apiData),
+            },
+          };
+
+          const apiReq = https.request(options, (apiRes) => {
+            let apiBody = "";
+            apiRes.on("data", (chunk) => (apiBody += chunk));
+            apiRes.on("end", () => {
+              try {
+                const result = JSON.parse(apiBody);
+                if (result.error) {
+                  return res.status(500).json({ error: result.error.message || "Claude API error" });
+                }
+
+                const idea = result.content && result.content[0] && result.content[0].text;
+                if (!idea) {
+                  return res.status(500).json({ error: "No idea generated" });
+                }
+
+                // Create new post with IDEA status
+                const newPost = {
+                  id: nextId,
+                  pillar: "Student Highlight",
+                  platform: "Both",
+                  format: "Photo caption",
+                  idea: idea.trim(),
+                  copy: null,
+                  imageNote: null,
+                  status: "idea",
+                  imageUrl: imgPath,
+                  scheduledFor: null
+                };
+
+                posts.push(newPost);
+                writePosts(posts);
+                res.json(newPost);
+              } catch (e) {
+                res.status(500).json({ error: "Failed to parse Claude response: " + e.message });
+              }
+            });
+          });
+
+          apiReq.on("error", (e) => res.status(500).json({ error: e.message }));
+          apiReq.write(apiData);
+          apiReq.end();
+          return;
+        }
+      }
+      res.status(400).json({ error: "No image found in upload" });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
 });
 
 // Upload photo and generate caption with AI
@@ -415,6 +661,148 @@ app.post("/api/posts/:id/upload-image", (req, res) => {
   });
 });
 
+// Simple upload photo and generate caption endpoint
+app.post("/api/posts/upload-photo-caption", (req, res) => {
+  const imgDir = path.join(__dirname, "public", "images");
+  if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+
+  const chunks = [];
+  req.on("data", (chunk) => chunks.push(chunk));
+  req.on("end", async () => {
+    try {
+      const body = Buffer.concat(chunks);
+      const contentType = req.headers["content-type"] || "";
+      const boundaryMatch = contentType.match(/boundary=(.+)/);
+      if (!boundaryMatch) {
+        return res.status(400).json({ error: "No boundary found" });
+      }
+      const boundary = boundaryMatch[1];
+      const bodyStr = body.toString("latin1");
+      const parts = bodyStr.split("--" + boundary);
+
+      let imageBuffer = null;
+      let ext = "jpg";
+
+      for (const part of parts) {
+        if (part.includes("filename=")) {
+          const headerEnd = part.indexOf("\r\n\r\n");
+          if (headerEnd === -1) continue;
+          const fileData = part.slice(headerEnd + 4);
+          const trimmed = fileData.replace(/\r\n$/, "");
+          ext = part.includes("image/png") ? "png" : "jpg";
+          imageBuffer = Buffer.from(trimmed, "latin1");
+          break;
+        }
+      }
+
+      if (!imageBuffer) {
+        return res.status(400).json({ error: "No image found in upload" });
+      }
+
+      // Generate new post ID
+      const posts = readPosts();
+      const maxId = posts.reduce((max, p) => Math.max(max, p.id), 0);
+      const newId = maxId + 1;
+
+      // Save image
+      const imgPath = `/images/post-${newId}.${ext}`;
+      const fullPath = path.join(__dirname, "public", imgPath);
+      fs.writeFileSync(fullPath, imageBuffer);
+
+      // Generate caption using Claude vision
+      const prompts = readPrompts();
+      const recentRejections = getRecentRejections();
+      const avoidanceExamples = recentRejections
+        .map(r => `AVOID THIS: "${r.copy}" (Reason: ${r.details})`)
+        .join('\n');
+
+      const systemPrompt = prompts.socialCaption +
+        (avoidanceExamples ? `\n\nLEARN FROM THESE REJECTIONS:\n${avoidanceExamples}` : '');
+
+      const base64Image = imageBuffer.toString("base64");
+      const mediaType = ext === 'png' ? "image/png" : "image/jpeg";
+
+      const apiData = JSON.stringify({
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType,
+                data: base64Image
+              }
+            },
+            {
+              type: "text",
+              text: "Write a short, witty caption for this photo."
+            }
+          ]
+        }]
+      });
+
+      const options = {
+        hostname: "api.anthropic.com",
+        path: "/v1/messages",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Length": Buffer.byteLength(apiData),
+        },
+      };
+
+      const apiReq = https.request(options, (apiRes) => {
+        let apiBody = "";
+        apiRes.on("data", (chunk) => (apiBody += chunk));
+        apiRes.on("end", () => {
+          try {
+            const result = JSON.parse(apiBody);
+            if (result.error) {
+              return res.status(500).json({ error: result.error.message || "Claude API error" });
+            }
+
+            const caption = result.content && result.content[0] && result.content[0].text;
+            if (!caption) {
+              return res.status(500).json({ error: "No caption generated" });
+            }
+
+            // Create new post
+            const newPost = {
+              id: newId,
+              pillar: "Student Highlight",
+              platform: "Both",
+              format: "Photo caption",
+              copy: caption.trim(),
+              imageNote: "",
+              status: "pending",
+              imageUrl: imgPath,
+              scheduledFor: null
+            };
+
+            posts.unshift(newPost);
+            writePosts(posts);
+            res.json(newPost);
+          } catch (e) {
+            res.status(500).json({ error: "Failed to parse Claude response: " + e.message });
+          }
+        });
+      });
+
+      apiReq.on("error", (e) => res.status(500).json({ error: e.message }));
+      apiReq.write(apiData);
+      apiReq.end();
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+});
+
 // Rejection with feedback endpoint
 app.post("/api/posts/:id/reject", (req, res) => {
   const posts = readPosts();
@@ -443,6 +831,7 @@ app.post("/api/posts/:id/reject", (req, res) => {
     details,
     notes: notes || null,
     copy: posts[idx].copy,
+    idea: posts[idx].idea,
     timestamp: posts[idx].rejectionFeedback.timestamp
   });
 
@@ -493,6 +882,393 @@ app.post("/api/posts/:id/regenerate", async (req, res) => {
     post.copy = newCaption;
     post.status = "pending";  // Reset to pending for re-review
     post.rejectionFeedback = null;  // Clear feedback
+
+    writePosts(posts);
+    res.json(post);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Regenerate caption for existing post with photo
+app.post("/api/posts/:id/regenerate-caption", async (req, res) => {
+  const posts = readPosts();
+  const id = parseInt(req.params.id);
+  const idx = posts.findIndex((p) => p.id === id);
+
+  if (idx === -1) return res.status(404).json({ error: "Post not found" });
+
+  const post = posts[idx];
+  if (!post.imageUrl) {
+    return res.status(400).json({ error: "No image to generate caption from" });
+  }
+
+  try {
+    // Get recent rejections for learning
+    const recentRejections = getRecentRejections();
+    const avoidanceExamples = recentRejections
+      .map(r => `AVOID THIS: "${r.copy}" (Reason: ${r.details})`)
+      .join('\n');
+
+    // Load configurable prompts
+    const prompts = readPrompts();
+
+    // Read image file
+    const fullPath = path.join(__dirname, "public", post.imageUrl);
+    if (!fs.existsSync(fullPath)) {
+      return res.status(400).json({ error: "Image file not found" });
+    }
+
+    const imageBuffer = fs.readFileSync(fullPath);
+    const base64Image = imageBuffer.toString("base64");
+    const mediaType = post.imageUrl.endsWith('.png') ? "image/png" : "image/jpeg";
+
+    // Generate new caption from image
+    const systemPrompt = prompts.socialCaption +
+      (avoidanceExamples ? `\n\nLEARN FROM THESE REJECTIONS:\n${avoidanceExamples}` : '');
+
+    const userPrompt = "Analyze this photo and write a fun, engaging social media caption for it.";
+
+    const apiData = JSON.stringify({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mediaType,
+              data: base64Image
+            }
+          },
+          {
+            type: "text",
+            text: userPrompt
+          }
+        ]
+      }]
+    });
+
+    const options = {
+      hostname: "api.anthropic.com",
+      path: "/v1/messages",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Length": Buffer.byteLength(apiData),
+      },
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+      let apiBody = "";
+      apiRes.on("data", (chunk) => (apiBody += chunk));
+      apiRes.on("end", () => {
+        try {
+          const result = JSON.parse(apiBody);
+          if (result.error) {
+            return res.status(500).json({ error: result.error.message || "Claude API error" });
+          }
+
+          const caption = result.content && result.content[0] && result.content[0].text;
+          if (!caption) {
+            return res.status(500).json({ error: "No caption generated" });
+          }
+
+          // Update post with new caption
+          post.copy = caption.trim();
+          writePosts(posts);
+          res.json(post);
+        } catch (e) {
+          res.status(500).json({ error: "Failed to parse Claude response: " + e.message });
+        }
+      });
+    });
+
+    apiReq.on("error", (e) => res.status(500).json({ error: e.message }));
+    apiReq.write(apiData);
+    apiReq.end();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Generate full post from approved idea (Stage 2)
+app.post("/api/posts/:id/generate-full-post", async (req, res) => {
+  const posts = readPosts();
+  const id = parseInt(req.params.id);
+  const idx = posts.findIndex((p) => p.id === id);
+
+  if (idx === -1) return res.status(404).json({ error: "Post not found" });
+
+  const post = posts[idx];
+  if (post.status !== "idea") {
+    return res.status(400).json({ error: "Can only generate full post from idea status" });
+  }
+
+  if (!post.idea) {
+    return res.status(400).json({ error: "No idea found in post" });
+  }
+
+  try {
+    // Get recent rejections for learning
+    const recentRejections = getRecentRejections();
+    const avoidanceExamples = recentRejections
+      .map(r => `AVOID THIS: "${r.copy}" (Reason: ${r.details})`)
+      .join('\n');
+
+    // Load configurable prompts
+    const prompts = readPrompts();
+    console.log('[Generate Full Post] Using socialCaption prompt:', prompts.socialCaption.substring(0, 100) + '...');
+
+    // Generate full caption based on the approved idea
+    const captionPrompt = `${prompts.socialCaption}
+
+${avoidanceExamples ? `LEARN FROM THESE REJECTIONS:\n${avoidanceExamples}\n\n` : ''}
+APPROVED POST IDEA:
+"${post.idea}"
+
+Based on this approved idea, write a social media caption that brings this concept to life. Make it engaging, on-brand, and authentic to Best Lesson Ever's voice.`;
+
+    const captionData = JSON.stringify({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 300,
+      system: captionPrompt,
+      messages: [{
+        role: "user",
+        content: "Write the caption based on the idea."
+      }]
+    });
+
+    const captionOptions = {
+      hostname: "api.anthropic.com",
+      path: "/v1/messages",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Length": Buffer.byteLength(captionData),
+      },
+    };
+
+    // Generate caption
+    const caption = await new Promise((resolve, reject) => {
+      const apiReq = https.request(captionOptions, (apiRes) => {
+        let apiBody = "";
+        apiRes.on("data", (chunk) => (apiBody += chunk));
+        apiRes.on("end", () => {
+          try {
+            const result = JSON.parse(apiBody);
+            if (result.error) {
+              reject(new Error(result.error.message || "Claude API error"));
+            }
+            const text = result.content && result.content[0] && result.content[0].text;
+            if (!text) {
+              reject(new Error("No caption generated"));
+            }
+            resolve(text.trim());
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+      apiReq.on("error", reject);
+      apiReq.write(captionData);
+      apiReq.end();
+    });
+
+    // Generate image prompt from the idea and caption
+    // Add timestamp to force different responses each time
+    const timestamp = Date.now();
+    const imagePromptText = `Create a DALL-E 3 image prompt for this social media post about Best Lesson Ever music studio in Friendswood, TX.
+
+Idea: "${post.idea}"
+Caption: "${caption}"
+Timestamp: ${timestamp}
+
+CRITICAL INSTRUCTION: You MUST choose a COMPLETELY DIFFERENT visual style than you've chosen before. Every single image must look dramatically different. Do NOT default to Memphis Milano or any other style repeatedly.
+
+Generate a detailed DALL-E 3 prompt following these STRICT requirements:
+
+STYLE (CRITICAL - MUST BE DIFFERENT EVERY TIME):
+Pick ONE approach that you have NOT used recently - HEAVILY FAVOR very stylized, graphic, bold aesthetics:
+
+1. Use one of these existing styles:
+   - Cyberpunk: "Dark cyberpunk digital art, harsh electric neon against black, heavy glitch distortion, brutalist futuristic edge, underground hacker aesthetic, dystopian rebellion"
+   - Cartoon: "Bold underground comic style, thick ink outlines, punchy saturated colors, exaggerated features, street art energy, rebellious and fun"
+   - Retro Pop: "Bold 60s-70s pop art, vivid primary colors, halftone dots, Roy Lichtenstein meets Warhol, graphic poster art, countercultural punch"
+   - Memphis Design: "Bold Memphis Milano style, geometric shapes, bright clashing colors, 80s postmodern graphics, playful asymmetry, maximum visual impact"
+
+2. OR invent a NEW highly stylized visual approach - BE CREATIVE AND DIFFERENT:
+   - Bauhaus constructivist poster (geometric shapes, primary colors, functional typography)
+   - Risograph print with limited color palette (grainy texture, overlapping colors)
+   - Cut-paper collage with bold shapes (layered construction paper aesthetic)
+   - Screenprint poster art (flat colors, halftone textures, punk rock poster vibe)
+   - Japanese woodblock print modern remix (flat perspective, bold outlines, limited palette)
+   - Vaporwave aesthetic (pastel colors, roman statues, palm trees, retro computer graphics)
+   - Soviet propaganda poster style (heroic angles, strong diagonals, limited color)
+   - Art deco geometric illustration (streamlined forms, metallic golds, elegant symmetry)
+   - Stencil graffiti art (spray paint aesthetic, urban street art, bold stenciled shapes)
+   - Linocut print style (carved relief texture, high contrast black and white)
+   - Mid-century modern illustration (atomic age, boomerang shapes, pastel palette)
+   - Suprematist geometric abstraction (floating geometric forms, dynamic composition)
+   - Psychedelic poster art (swirling patterns, vibrant contrasts, groovy 60s)
+   - Isometric pixel art (retro video game aesthetic, precise geometric perspective)
+   - Paper cutout shadow box (layered depth, theatrical lighting, dimensional)
+   - Neon noir illustration (dark backgrounds, glowing neon accents, cyberpunk meets noir)
+   - Scandinavian folk art (flat decorative patterns, nature motifs, handcrafted feel)
+   - Comic book panel art (bold inking, Ben-Day dots, dramatic action lines)
+   - Brutalist graphic design (raw concrete textures, heavy typography, stark minimalism)
+   - Tropical maximalism (lush colors, botanical patterns, joyful excess)
+
+NEVER use realistic or photorealistic styles. Always choose HIGHLY stylized, graphic, illustrative approaches with strong visual identity.
+
+DEMOGRAPHICS (CRITICAL):
+- Clean-cut American aesthetic typical of Friendswood, Texas (suburban Houston area)
+- Diverse but appropriate for Texas suburban community
+- Modern, approachable, family-friendly
+- NO cultural stereotypes, traditional/ethnic clothing, or non-American aesthetics
+
+ANATOMY (CRITICAL):
+- Exactly 5 fingers per hand, properly proportioned
+- Correct human anatomy - no extra limbs, distorted features, or mutations
+- Natural, realistic body positions
+- Perfect facial features, no distortions
+
+CONTENT:
+- Music lessons context (instruments: guitar, piano, drums, violin, voice)
+- Students ages 5-18 or adult students with teachers
+- Genuine moments of learning, practice, or achievement
+- Fun, engaging, positive energy
+
+NEGATIVE PROMPTS (CRITICAL - NEVER INCLUDE):
+- NO extra fingers, deformed hands, incorrect number of fingers, distorted hands or faces
+- NO cultural/ethnic stereotypes, traditional clothing, or religious symbols
+- NO overly posed, fake smiles, or stock photo aesthetics
+- NO blurry images, low quality, noise, grain, or artifacts
+- NO text, watermarks, logos, or writing of any kind
+- NO negative emotions, sad faces, or inappropriate content
+- NO overly saturated or unnatural colors (unless style requires it)
+- NO photorealistic style (must be stylized/creative)
+
+Return ONLY the optimized DALL-E 3 prompt incorporating one randomly selected style, nothing else.`;
+
+    const imagePromptData = JSON.stringify({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 300,
+      messages: [{
+        role: "user",
+        content: imagePromptText
+      }]
+    });
+
+    const imagePromptOptions = {
+      hostname: "api.anthropic.com",
+      path: "/v1/messages",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Length": Buffer.byteLength(imagePromptData),
+      },
+    };
+
+    // Generate DALL-E prompt
+    const dallePrompt = await new Promise((resolve, reject) => {
+      const apiReq = https.request(imagePromptOptions, (apiRes) => {
+        let apiBody = "";
+        apiRes.on("data", (chunk) => (apiBody += chunk));
+        apiRes.on("end", () => {
+          try {
+            const result = JSON.parse(apiBody);
+            if (result.error) {
+              reject(new Error(result.error.message || "Claude API error"));
+            }
+            const text = result.content && result.content[0] && result.content[0].text;
+            if (!text) {
+              reject(new Error("No image prompt generated"));
+            }
+            resolve(text.trim());
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+      apiReq.on("error", reject);
+      apiReq.write(imagePromptData);
+      apiReq.end();
+    });
+
+    // Generate image with DALL-E 3
+    console.log('[Generate Full Post] Generating image with prompt:', dallePrompt.substring(0, 100) + '...');
+    const imageData = JSON.stringify({
+      model: "dall-e-3",
+      prompt: dallePrompt,
+      size: "1024x1024",
+      quality: "hd",
+      n: 1,
+      response_format: "url"
+    });
+
+    const imageOptions = {
+      hostname: "api.openai.com",
+      path: "/v1/images/generations",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENAI_KEY}`,
+        "Content-Length": Buffer.byteLength(imageData),
+      },
+    };
+
+    console.log('[Generate Full Post] Calling OpenAI image API...');
+    const imageUrl = await new Promise((resolve, reject) => {
+      const apiReq = https.request(imageOptions, (apiRes) => {
+        console.log('[Generate Full Post] Image API response status:', apiRes.statusCode);
+        let apiBody = "";
+        apiRes.on("data", (chunk) => (apiBody += chunk));
+        apiRes.on("end", () => {
+          console.log('[Generate Full Post] Image API response:', apiBody.substring(0, 200));
+          try {
+            const result = JSON.parse(apiBody);
+            if (result.error) {
+              console.error('[Generate Full Post] Image API error:', result.error);
+              reject(new Error(result.error.message || "Image API error"));
+            }
+
+            // DALL-E 3 returns URLs
+            if (result.data && result.data[0] && result.data[0].url) {
+              console.log('[Generate Full Post] Image URL received:', result.data[0].url);
+              resolve(result.data[0].url);
+            } else {
+              console.error('[Generate Full Post] No image URL in response:', result);
+              reject(new Error("No image URL in response"));
+            }
+          } catch (e) {
+            console.error('[Generate Full Post] Failed to parse image response:', e.message);
+            reject(e);
+          }
+        });
+      });
+      apiReq.on("error", (e) => {
+        console.error('[Generate Full Post] Image API request error:', e.message);
+        reject(e);
+      });
+      apiReq.write(imageData);
+      apiReq.end();
+    });
+
+    // Update post with full caption, image, and change status to pending
+    post.copy = caption;
+    post.imageUrl = imageUrl;
+    post.status = "pending";
+    post.imageNote = `Generated from idea: "${post.idea}"`;
 
     writePosts(posts);
     res.json(post);
@@ -586,9 +1362,10 @@ app.post("/api/posts/:id/generate-image", (req, res) => {
   const data = JSON.stringify({
     model: "dall-e-3",
     prompt: prompt.slice(0, 1000),
-    n: 1,
     size: "1024x1024",
-    quality: "standard",
+    quality: "hd",
+    n: 1,
+    response_format: "url"
   });
 
   const options = {
@@ -1464,6 +2241,281 @@ app.post("/api/google-drive/import/:postId", async (req, res) => {
 });
 
 // Download from Drive and generate caption
+// Generate IDEA from Google Drive photo (Stage 1)
+app.post("/api/google-drive/generate-idea", async (req, res) => {
+  console.log('[Idea] Starting idea generation...');
+  if (!googleTokens) {
+    console.log('[Idea] Error: Not authenticated');
+    return res.status(401).json({ error: "Not authenticated with Google Drive" });
+  }
+
+  const { fileId, fileName } = req.body;
+  console.log('[Idea] FileId:', fileId, 'FileName:', fileName);
+
+  oauth2Client.setCredentials(googleTokens);
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+
+  try {
+    // Download file from Google Drive
+    console.log('[Idea] Downloading from Drive...');
+    const response = await drive.files.get(
+      { fileId: fileId, alt: "media" },
+      { responseType: "arraybuffer" }
+    );
+    console.log('[Idea] Downloaded, size:', response.data.byteLength || response.data.length);
+
+    // Save locally with resizing and HEIC conversion
+    const posts = readPosts();
+    const nextId = posts.length ? Math.max(...posts.map((p) => p.id)) + 1 : 1;
+    const imgDir = path.join(__dirname, "public", "images");
+    if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+
+    const imgPath = `/images/post-${nextId}.jpg`;
+    const fullPath = path.join(__dirname, "public", imgPath);
+
+    console.log('[Idea] Processing image (HEIC conversion if needed, resize)...');
+    const processedBuffer = await processImage(Buffer.from(response.data), fileName);
+
+    fs.writeFileSync(fullPath, processedBuffer);
+    console.log('[Idea] Original size:', response.data.byteLength, 'New size:', processedBuffer.length);
+
+    // Convert to base64 for Claude
+    const base64Image = processedBuffer.toString("base64");
+    const mediaType = "image/jpeg";
+    console.log('[Idea] Media type:', mediaType, 'Base64 length:', base64Image.length);
+
+    // Call Claude API for IDEA only
+    const systemPrompt = `You are a social media strategist for Best Lesson Ever, a music lesson studio.
+
+Analyze this photo and generate a SHORT POST IDEA (not the full caption).
+
+Return ONLY a 1-2 sentence concept/hook that describes what the post should be about.
+Examples:
+- "Student showing off their progress after just 3 months of lessons"
+- "Teacher and student both cracking up during a fun lesson moment"
+- "The face you make when you finally nail that tricky chord"
+
+Be specific to what you see in the image. Focus on the hook/angle, not the full caption.`;
+
+    const userPrompt = "What's the post idea for this image?";
+
+    const apiData = JSON.stringify({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 150,
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mediaType,
+              data: base64Image
+            }
+          },
+          {
+            type: "text",
+            text: userPrompt
+          }
+        ]
+      }]
+    });
+
+    const options = {
+      hostname: "api.anthropic.com",
+      path: "/v1/messages",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Length": Buffer.byteLength(apiData),
+      },
+    };
+
+    console.log('[Idea] Calling Claude API...');
+    const apiReq = https.request(options, (apiRes) => {
+      console.log('[Idea] Claude API status:', apiRes.statusCode);
+      let apiBody = "";
+      apiRes.on("data", (chunk) => (apiBody += chunk));
+      apiRes.on("end", () => {
+        try {
+          const result = JSON.parse(apiBody);
+          if (result.error) {
+            console.log('[Idea] Claude API error:', result.error);
+            return res.status(500).json({ error: result.error.message || "Claude API error" });
+          }
+
+          const idea = result.content && result.content[0] && result.content[0].text;
+          if (!idea) {
+            console.log('[Idea] No idea in response:', JSON.stringify(result).slice(0, 200));
+            return res.status(500).json({ error: "No idea generated" });
+          }
+
+          console.log('[Idea] Generated idea:', idea);
+
+          // Create new post with IDEA status
+          const newPost = {
+            id: nextId,
+            pillar: "Student Highlight",
+            platform: "Both",
+            format: "Photo caption",
+            idea: idea.trim(),
+            copy: null,
+            imageNote: null,
+            status: "idea",
+            imageUrl: imgPath,
+            scheduledFor: null
+          };
+
+          posts.push(newPost);
+          writePosts(posts);
+          console.log('[Idea] Created new idea post:', nextId);
+          res.json(newPost);
+        } catch (e) {
+          console.log('[Idea] Parse error:', e.message);
+          res.status(500).json({ error: "Failed to parse Claude response: " + e.message });
+        }
+      });
+    });
+
+    apiReq.on("error", (e) => {
+      console.log('[Idea] Request error:', e.message);
+      res.status(500).json({ error: e.message });
+    });
+    apiReq.write(apiData);
+    apiReq.end();
+  } catch (e) {
+    console.log('[Idea] Overall error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Simple Google Drive photo import with caption
+app.post("/api/google-drive/photo-caption", async (req, res) => {
+  if (!googleTokens) {
+    return res.status(401).json({ error: "Not authenticated with Google Drive" });
+  }
+
+  const { fileId, fileName } = req.body;
+
+  oauth2Client.setCredentials(googleTokens);
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+
+  try {
+    // Download file from Google Drive
+    const response = await drive.files.get(
+      { fileId: fileId, alt: "media" },
+      { responseType: "arraybuffer" }
+    );
+
+    // Save locally with resizing and HEIC conversion
+    const posts = readPosts();
+    const nextId = posts.length ? Math.max(...posts.map((p) => p.id)) + 1 : 1;
+    const imgDir = path.join(__dirname, "public", "images");
+    if (!fs.existsSync(imgDir)) fs.mkdirSync(imgDir, { recursive: true });
+
+    const imgPath = `/images/post-${nextId}.jpg`;
+    const fullPath = path.join(__dirname, "public", imgPath);
+
+    const processedBuffer = await processImage(Buffer.from(response.data), fileName);
+    fs.writeFileSync(fullPath, processedBuffer);
+
+    // Generate caption using Claude vision
+    const prompts = readPrompts();
+    const recentRejections = getRecentRejections();
+    const avoidanceExamples = recentRejections
+      .map(r => `AVOID THIS: "${r.copy}" (Reason: ${r.details})`)
+      .join('\n');
+
+    const systemPrompt = prompts.socialCaption +
+      (avoidanceExamples ? `\n\nLEARN FROM THESE REJECTIONS:\n${avoidanceExamples}` : '');
+
+    const base64Image = processedBuffer.toString("base64");
+    const mediaType = "image/jpeg";
+
+    const apiData = JSON.stringify({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mediaType,
+              data: base64Image
+            }
+          },
+          {
+            type: "text",
+            text: "Write a short, witty caption for this photo."
+          }
+        ]
+      }]
+    });
+
+    const options = {
+      hostname: "api.anthropic.com",
+      path: "/v1/messages",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Length": Buffer.byteLength(apiData),
+      },
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+      let apiBody = "";
+      apiRes.on("data", (chunk) => (apiBody += chunk));
+      apiRes.on("end", () => {
+        try {
+          const result = JSON.parse(apiBody);
+          if (result.error) {
+            return res.status(500).json({ error: result.error.message || "Claude API error" });
+          }
+
+          const caption = result.content && result.content[0] && result.content[0].text;
+          if (!caption) {
+            return res.status(500).json({ error: "No caption generated" });
+          }
+
+          // Create new post with PENDING status (ready to review)
+          const newPost = {
+            id: nextId,
+            pillar: "Student Highlight",
+            platform: "Both",
+            format: "Photo caption",
+            copy: caption.trim(),
+            imageNote: "",
+            status: "pending",
+            imageUrl: imgPath,
+            scheduledFor: null,
+            driveFileId: fileId // Track which Google Drive file was used
+          };
+
+          posts.unshift(newPost);
+          writePosts(posts);
+          res.json(newPost);
+        } catch (e) {
+          res.status(500).json({ error: "Failed to parse Claude response: " + e.message });
+        }
+      });
+    });
+
+    apiReq.on("error", (e) => res.status(500).json({ error: e.message }));
+    apiReq.write(apiData);
+    apiReq.end();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post("/api/google-drive/generate-caption", async (req, res) => {
   console.log('[Caption] Starting caption generation...');
   if (!googleTokens) {
@@ -1708,11 +2760,12 @@ function updateRejectionPatterns(rejection) {
   patterns.byCategory[rejection.category].count++;
 
   // Add to recent rejections (keep last 20)
+  const copyText = rejection.copy || rejection.idea || '';
   patterns.recentRejections.unshift({
     postId: rejection.postId,
     category: rejection.category,
     details: rejection.details,
-    copy: rejection.copy.slice(0, 100),  // First 100 chars
+    copy: copyText.slice(0, 100),  // First 100 chars
     timestamp: rejection.timestamp
   });
   patterns.recentRejections = patterns.recentRejections.slice(0, 20);
@@ -1720,7 +2773,7 @@ function updateRejectionPatterns(rejection) {
   // Add example if count < 5
   if (patterns.byCategory[rejection.category].examples.length < 5) {
     patterns.byCategory[rejection.category].examples.push({
-      copy: rejection.copy,
+      copy: copyText,
       details: rejection.details
     });
   }
