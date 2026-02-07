@@ -1,0 +1,78 @@
+{
+  "totalRejections": 5,
+  "byCategory": {
+    "caption_tone": {
+      "count": 3,
+      "examples": [
+        {
+          "copy": "Recital prep week is basically the Super Bowl around here. Teachers rehearsing, students buzzing, someone is definitely stress-eating donuts in the break room. We wouldn't have it any other way.",
+          "details": "Too formal and corporate sounding, needs more irreverent humor and personality"
+        },
+        {
+          "copy": "If your kid says \"I already practiced\" and you didn't hear anything... they did not practice. Source: every music teacher ever.",
+          "details": "The post is kind of negative, it's not really funny. The image isn't interesting. This style needs to go"
+        },
+        {
+          "copy": "Slow is smooth and smooth is fast. If you can't play it slow, you definitely can't play it fast. Drop the tempo, nail the notes, then speed up. Every pro does this. Every single one.",
+          "details": "The tone is a little to commanding, there's no humor here or anything heartfelt. But the message is good! Just need to dial the tone in.\n\nAlso, this photo is meh"
+        }
+      ]
+    },
+    "caption_length": {
+      "count": 1,
+      "examples": [
+        {
+          "copy": "She told her mom she wanted to play violin \"because it sounds like a movie.\" Four months later she played the theme from Schindler's List at the showcase. She's 9. We can't even.",
+          "details": "Actually the tone is fine but this caption is way too short - needs to be 3-4 sentences minimum"
+        }
+      ]
+    },
+    "other": {
+      "count": 1,
+      "examples": [
+        {
+          "copy": "That moment when your teacher realizes you've been secretly practicing at home and might actually be cooler than them.",
+          "details": "already published this - forget this note"
+        }
+      ]
+    }
+  },
+  "recentRejections": [
+    {
+      "postId": 17,
+      "category": "caption_tone",
+      "details": "The tone is a little to commanding, there's no humor here or anything heartfelt. But the message is good! Just need to dial the tone in.\n\nAlso, this photo is meh",
+      "copy": "Slow is smooth and smooth is fast. If you can't play it slow, you definitely can't play it fast. Dro",
+      "timestamp": "2026-02-07T03:01:58.149Z"
+    },
+    {
+      "postId": 31,
+      "category": "other",
+      "details": "already published this - forget this note",
+      "copy": "That moment when your teacher realizes you've been secretly practicing at home and might actually be",
+      "timestamp": "2026-02-07T03:00:59.950Z"
+    },
+    {
+      "postId": 25,
+      "category": "caption_length",
+      "details": "Actually the tone is fine but this caption is way too short - needs to be 3-4 sentences minimum",
+      "copy": "She told her mom she wanted to play violin \"because it sounds like a movie.\" Four months later she p",
+      "timestamp": "2026-02-07T02:46:56.101Z"
+    },
+    {
+      "postId": 9,
+      "category": "caption_tone",
+      "details": "The post is kind of negative, it's not really funny. The image isn't interesting. This style needs to go",
+      "copy": "If your kid says \"I already practiced\" and you didn't hear anything... they did not practice. Source",
+      "timestamp": "2026-02-07T02:45:46.221Z"
+    },
+    {
+      "postId": 24,
+      "category": "caption_tone",
+      "details": "Too formal and corporate sounding, needs more irreverent humor and personality",
+      "copy": "Recital prep week is basically the Super Bowl around here. Teachers rehearsing, students buzzing, so",
+      "timestamp": "2026-02-07T02:41:55.841Z"
+    }
+  ],
+  "lastUpdated": "2026-02-07T03:01:58.151Z"
+}
